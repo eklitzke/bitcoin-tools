@@ -3,16 +3,13 @@
 # Script to unpack data from stap into pandas frames.
 
 import argparse
-import re
 import pickle
+import datetime
 from collections import defaultdict
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Set
 
 import numpy as np
 import pandas as pd
-
-INT_RE = re.compile(r'^\d+$')
-FLOAT_RE = re.compile(r'^\d+\.\d+$')
 
 IGNORE_FIELDS = frozenset(['progress'])
 IGNORE_EVENTS = frozenset(['finish_ibd'])
@@ -24,6 +21,11 @@ def create_dataframe(fields: List[str],
     for ts, info in data:
         vec.append([ts] + [info.get(k, 0) for k in fields])
     return np.array(vec)
+
+
+def arrange_fields(fields: Set[str]) -> List[str]:
+    fields.remove('t')
+    return ['t'] + list(sorted(fields))
 
 
 def main():
@@ -41,30 +43,31 @@ def main():
             fields = line.rstrip().split()
             info = {}
             event = None
-            ts = None
             for field in fields:
                 k, v = field.split('=')
                 if k in IGNORE_FIELDS:
                     continue
                 elif k == 't':
-                    ts = int(float(v) * 1e9)
+                    info['t'] = datetime.datetime.fromtimestamp(float(v))
                 elif k == 'event':
                     event = v
                 else:
                     info[k] = int(v, 10)
-            assert ts and event
+            assert event
             if event in IGNORE_EVENTS:
                 continue
-            for k, v in info.items():
+            for k in info:
                 event_fields[event].add(k)
-            events[event].append((ts, info))
+            events[event].append(info)
 
     frames = {}
     for event, data in events.items():
-        fields = list(event_fields[event])
-        vec = create_dataframe(fields, data)
-        frame = pd.DataFrame(vec, columns=['t'] + fields)
-        frames[event] = frame
+        fields = arrange_fields(event_fields[event])
+        for row in data:
+            for field in fields:
+                row.setdefault(field, 0)
+        frame = pd.DataFrame(data)
+        frames[event] = frame[fields]
 
     with open(args.output, 'wb') as outfile:
         pickle.dump(frames, outfile)

@@ -10,3 +10,6 @@ testnet=1
 dbcache=512               
 maxmempoolsize=0          
 limitdescendantsize=0   
+
+
+testnet-default-1518743746.log.xz is testnet synced with default settings
