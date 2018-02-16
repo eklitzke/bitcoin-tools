@@ -6,21 +6,11 @@ import argparse
 import pickle
 import datetime
 from collections import defaultdict
-from typing import List, Dict, Tuple, Set
+from typing import List, Dict, Set
 
-import numpy as np
 import pandas as pd
 
-IGNORE_FIELDS = frozenset(['progress'])
 IGNORE_EVENTS = frozenset(['finish_ibd'])
-
-
-def create_dataframe(fields: List[str],
-                     data: List[Tuple[int, Dict[str, int]]]) -> np.ndarray:
-    vec = []
-    for ts, info in data:
-        vec.append([ts] + [info.get(k, 0) for k in fields])
-    return np.array(vec)
 
 
 def arrange_fields(fields: Set[str]) -> List[str]:
@@ -45,12 +35,12 @@ def main():
             event = None
             for field in fields:
                 k, v = field.split('=')
-                if k in IGNORE_FIELDS:
-                    continue
-                elif k == 't':
+                if k == 't':
                     info['t'] = datetime.datetime.fromtimestamp(float(v))
                 elif k == 'event':
                     event = v
+                elif k == 'progress':
+                    info[k] = float(v)
                 else:
                     info[k] = int(v, 10)
             assert event
@@ -62,15 +52,19 @@ def main():
 
     frames = {}
     for event, data in events.items():
-        fields = arrange_fields(event_fields[event])
+        fields = event_fields[event]
+        times = []
         for row in data:
             for field in fields:
                 row.setdefault(field, 0)
-        frame = pd.DataFrame(data)
-        frames[event] = frame[fields]
+            times.append(row['t'])
+        frame = pd.DataFrame(data, index=times)
+        fields.remove('t')
+        frames[event] = frame[sorted(fields)]
 
     with open(args.output, 'wb') as outfile:
-        pickle.dump(frames, outfile)
+        save_data = {'filename': args.filename, 'frames': frames}
+        pickle.dump(save_data, outfile)
 
 
 if __name__ == '__main__':
