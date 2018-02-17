@@ -1,0 +1,145 @@
+// global vars
+
+global targetpid
+probe begin {
+  targetpid = target()
+}
+
+@define checkpid %(if (pid() != targetpid) next %)
+
+function show_time_(event: string) {
+  t = gettimeofday_ns()
+  secs = t / 1000000000
+  nanos = t % 1000000000
+  printf("t=%d.%09d event=%s", secs, nanos, event)
+}
+
+function show_time(event: string) {
+  show_time_(event)
+  print(" ")
+}
+
+global io
+function rwhelper(name: string, devname: string, nbytes: long) {
+  if (pid() != targetpid || nbytes == 0)
+    return 1
+  if (devname == "N/A")
+    tag = sprintf("%s.cached", name)
+  else
+    tag = sprintf("%s.uncached", name)
+  io[tag] += nbytes
+}
+
+global vfscount, vfsstart, vfstime
+probe vfs.* {
+  @checkpid
+  vfscount[name]++
+  vfsstart[tid(), name] = gettimeofday_ns()
+}
+
+global readfiles
+probe vfs.read*.return {
+  @checkpid
+  rwhelper(name, devname, $return)
+  readfiles[pathname] += bytes_to_read
+}
+
+probe vfs.write*.return {
+  @checkpid
+  rwhelper(name, devname, $return)
+}
+
+probe vfs.*.return {
+  @checkpid
+  vfstime[name] += gettimeofday_ns() - vfsstart[tid(), name]
+}
+
+function show_vfs() {
+  show_time_("vfs")
+  foreach([name] in vfscount) {
+    printf(" %s=%d", name, vfscount[name])
+  }
+  println()
+  delete vfscount
+
+  show_time_("vfstime")
+  foreach([name] in vfstime) {
+    printf(" %s=%d", name, vfstime[name])
+  }
+  println()
+  delete vfstime
+
+  show_time_("vfsread")
+  foreach([name] in readfiles) {
+    printf(" %s=%d", name, readfiles[name])
+  }
+  println()
+  delete readfiles
+}
+
+probe bitcoind = process("/home/evan/code/bitcoin/src/bitcoind") {
+}
+
+// record when cache flushes start
+probe bitcoind.mark("cache__flush") {
+  show_time("flush")
+  printf("num_coins=%lu num_bytes=%lu\n", $arg1, $arg2)
+}
+
+// record cache hits
+global hits
+probe bitcoind.mark("cache__hit") {
+  hits++
+}
+
+// record cache misses
+global misses
+probe bitcoind.mark("cache__miss") {
+  misses++
+}
+
+function show_cache() {
+  show_time("cache")
+  printf("hits=%d misses=%d\n", hits, misses)
+  hits=0
+  misses=0
+}
+
+probe bitcoind.mark("finish__ibd") {
+  show_time("finish_ibd")
+  println()
+  exit()
+}
+
+probe bitcoind.mark("update__tip") {
+  show_time("update_tip")
+  printf("height=%lu utxo_count=%lu utxo_memory=%lu ldb_count=%lu progress=0.%06d\n", $arg1, $arg2, $arg3, $arg4, $arg5)
+}
+
+global ioreqs
+probe ioblock_trace.request {
+  ioreqs++
+}
+
+function show_ioreqs() {
+  show_time("ioreqs")
+  printf("reqs=%lu\n", ioreqs)
+  ioreqs = 0
+}
+
+function show_io() {
+  show_time_("io")
+  foreach([name] in io) {
+    count = io[name]
+    printf(" %s=%d", name, count)
+  }
+  println()
+  delete io
+}
+
+probe timer.sec(10) {
+  show_cache()
+  show_io()
+  show_vfs()
+  show_ioreqs()
+}
