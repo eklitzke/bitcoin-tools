@@ -109,6 +109,7 @@ probe timer.sec(10) {
 
 global start_time
 probe begin {
+  println("begin")
   start_time = gettimeofday_s()
 }
 

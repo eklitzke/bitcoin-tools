@@ -5,7 +5,10 @@
 
 set -eu
 
-OUTFILE="$HOME/$(hostname -s)-$(date '+%s').log"
+if [ ! -d ~/logs ]; then
+  mkdir ~/logs
+fi
+OUTFILE="$HOME/logs/$(hostname -s)-$(date '+%s').log"
 
 sep() { echo "---" >> "$OUTFILE"; }
 
@@ -24,6 +27,8 @@ if [ ! -d "$BITCOINDIR" ] || [ ! -x "$BITCOIND" ]; then
   echo "failed to find bitcoind"
   exit 1
 fi
+
+echo "sending log output to $OUTFILE"
 
 pushd "$BITCOINDIR" &>/dev/null
 git rev-parse HEAD > "$OUTFILE"
