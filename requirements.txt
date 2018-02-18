@@ -1,0 +1,6 @@
+matplotlib
+mypy
+notebook
+numpy
+pandas
+yapf
