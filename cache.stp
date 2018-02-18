@@ -11,27 +11,29 @@ probe begin {
 global vfs
 probe vfs.*.return {
   @checkpid
-  vfs[name] += gettimeofday_us() - @entry(gettimeofday_us())
+  vfs[sprintf("count:%s", name)]++
+  vfs[sprintf("time:%s", name)] += gettimeofday_us() - @entry(gettimeofday_us())
 }
 
 // also add this guy, which reads a page on ext4
 probe kernel.function("ext4_mpage_readpages").return {
   @checkpid
-  vfs["ext4_mpage_readpages"] += gettimeofday_us() - @entry(gettimeofday_us())
+  vfs["count:ext4_mpage_readpages"]++
+  vfs["time:ext4_mpage_readpages"] += gettimeofday_us() - @entry(gettimeofday_us())
 }
 
 // information about bio ("block io") requests
 global bio
 probe ioblock.*, ioblock_trace.* {
   @checkpid
-  bio[sprintf("call:%s", name)]++
+  bio[sprintf("count:%s", name)]++
 }
 
 // again, add information about ext4 mpages
 probe kernel.function("ext4_mpage_readpages") {
   @checkpid
-  bio["ext4_mpage_readpages"] += $nr_pages
-  bio["call:ext4_mpage_readpages"]++
+  bio["pages:ext4_mpage_readpages"] += $nr_pages
+  bio["count:ext4_mpage_readpages"]++
 }
 
 probe bitcoind = process("/home/evan/code/bitcoin/src/bitcoind") {}
@@ -41,7 +43,7 @@ probe bitcoind.mark("cache__flush") {
   t = gettimeofday_us()
   secs = t / 1000000
   micros = t % 1000000
-  printf("flush num_coins=%lu num_bytes=%lu t=%lu.%06lu\n", $arg1, $arg2, secs, micros)
+  printf("flush count:coins=%lu count:bytes=%lu t=%lu.%06lu\n", $arg1, $arg2, secs, micros)
 }
 
 // record CCoinsViewCache hits
@@ -57,7 +59,7 @@ probe bitcoind.mark("cache__miss") {
 }
 
 function show_cache() {
-  printf("cache hits=%d misses=%d\n", hits, misses)
+  printf("cache hits=%lu misses=%lu\n", hits, misses)
   hits=0
   misses=0
 }
@@ -65,9 +67,15 @@ function show_cache() {
 global tip
 probe bitcoind.mark("update__tip") {
   tip["height"] = $arg1
-  tip["utxo_count"] = $arg2
-  tip["utxo_memory"] = $arg3
+  tip["count:utxo"] = $arg2
+  tip["memory:utxo"] = $arg3
   tip["progress"] = $arg4
+}
+
+global leveldb
+probe bitcoind.function("leveldb::DBImpl::Get").return {
+  leveldb["count:get"]++
+  leveldb["time:get"] += gettimeofday_us() - @entry(gettimeofday_us())
 }
 
 @define showmap(event, obj) %(
@@ -89,6 +97,7 @@ probe timer.sec(10) {
   // now show the events
   @showmap("bio", bio)
   @showmap("vfs", vfs)
+  @showmap("leveldb", leveldb)
   show_cache()
 
   height = tip["height"]
