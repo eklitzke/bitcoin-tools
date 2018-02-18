@@ -41,13 +41,16 @@ def load_events(infile: TextIO) -> Tuple[List[datetime.datetime], Dict[
     times = []
     section = 0
     for line in infile:
-        if line.startswith('----'):
+        line = line.strip()
+        if not line:
+            continue
+        elif line.startswith('----'):
             section += 1
             continue
         elif section < EXPECTED_SECTIONS:
             continue
 
-        fields = line.rstrip().split()
+        fields = line.split()
         event = fields.pop(0)
         info = split_fields(fields)
 
@@ -87,8 +90,7 @@ def create_frame(times: List[datetime.datetime], data: List[Dict[str, Any]],
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-o', '--output', default='data.pkl', help='Output .csv name')
+    parser.add_argument('-o', '--output', help='Output pkl name')
     parser.add_argument('-f', '--file', help='File to process')
     args = parser.parse_args()
 
@@ -122,7 +124,14 @@ def main():
     for event, data in events.items():
         frames[event] = create_frame(times, data, event_fields[event])
 
-    with open(args.output, 'wb') as outfile:
+    savefile = args.output if args.output is not None else None
+    if savefile is None:
+        outdir = os.path.abspath(os.path.dirname(logfile))
+        prefix = logfile.split('.')[0]
+        savefile = os.path.join(outdir, prefix + '.pkl')
+        print('saving output to {}'.format(savefile))
+
+    with open(savefile, 'wb') as outfile:
         save_data = {'filename': logfile, 'frames': frames}
         pickle.dump(save_data, outfile)
 

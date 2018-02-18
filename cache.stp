@@ -44,6 +44,7 @@ probe bitcoind.mark("cache__flush") {
   secs = t / 1000000
   micros = t % 1000000
   printf("flush count:coins=%lu count:bytes=%lu t=%lu.%06lu\n", $arg1, $arg2, secs, micros)
+  println()
 }
 
 // record CCoinsViewCache hits
@@ -78,6 +79,14 @@ probe bitcoind.function("leveldb::DBImpl::Get").return {
   leveldb["time:get"] += gettimeofday_us() - @entry(gettimeofday_us())
 }
 
+function show_mem() {
+  page_size = mem_page_size()
+  vsz = proc_mem_size() * page_size
+  rss = proc_mem_rss() * page_size
+  data = proc_mem_data() * page_size
+  printf("memory virtual=%lu rss=%lu data=%lu\n", vsz, rss, data)
+}
+
 @define showmap(event, obj) %(
   print(@event)
   foreach([key] in @obj) {
@@ -87,7 +96,7 @@ probe bitcoind.function("leveldb::DBImpl::Get").return {
   delete @obj
 %)
 
-probe timer.sec(10) {
+function show_all() {
   // print the timestamp for these events
   t = gettimeofday_us()
   secs = t / 1000000
@@ -99,21 +108,28 @@ probe timer.sec(10) {
   @showmap("vfs", vfs)
   @showmap("leveldb", leveldb)
   show_cache()
+  show_mem()
 
   height = tip["height"]
   progress = tip["progress"]
   @showmap("updatetip", tip)
   tip["height"] = height
   tip["progress"] = progress
+
+  println()
+}
+
+probe timer.sec(10) {
+  show_all()
 }
 
 global start_time
 probe begin {
-  println("begin")
   start_time = gettimeofday_s()
+  show_all()
 }
 
 probe bitcoind.mark("finish__ibd") {
-  printf("finished ibd in %d seconds\n", gettimeofday_s() - start_time)
+  printf("finish seconds=%d\n", gettimeofday_s() - start_time)
   exit()  // N.B. doesn't exit in interactive mode
 }

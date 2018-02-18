@@ -29,6 +29,7 @@ if [ ! -d "$BITCOINDIR" ] || [ ! -x "$BITCOIND" ]; then
 fi
 
 echo "sending log output to $OUTFILE"
+echo
 
 pushd "$BITCOINDIR" &>/dev/null
 git rev-parse HEAD > "$OUTFILE"
