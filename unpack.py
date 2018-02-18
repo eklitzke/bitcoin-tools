@@ -45,7 +45,7 @@ def split_fields(fields: List[str]) -> Dict[str, Field]:
 
 class EventData:
     def __init__(self):
-        self.hostinfo = {}
+        self.hostinfo = {}  # type: Dict[str, Field]
         self.config = ''
         self.flush_times = []  # type: List[datetime.datetime]
         self.data_times = []  # type: List[datetime.datetime]
@@ -72,6 +72,8 @@ def load_events(infile: TextIO) -> EventData:
 
         if section == 'system':
             k, v = line.split(' ', 1)
+            if k.endswith(':bytes') or k.endswith(':count'):
+                v = int(v)
             output.hostinfo[k] = v
             continue
         elif section == 'config':
