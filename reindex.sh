@@ -63,6 +63,9 @@ wait_for_finish() {
   done
 }
 
+# increase our fd limits (needed in the leveldb_tweaks branch)
+ulimit -Sn "$(ulimit -Hn)"
+
 sep systemtap
 stap -c "$BITCOIND -reindex-chainstate" "$SCRIPT" | tee -a "$OUTFILE" &
 wait_for_finish &

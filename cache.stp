@@ -81,9 +81,9 @@ probe bitcoind.function("leveldb::DBImpl::Get").return {
 
 function show_mem() {
   page_size = mem_page_size()
-  vsz = proc_mem_size() * page_size
-  rss = proc_mem_rss() * page_size
-  data = proc_mem_data() * page_size
+  vsz = proc_mem_size(targetpid) * page_size
+  rss = proc_mem_rss(targetpid) * page_size
+  data = proc_mem_data(targetpid) * page_size
   printf("memory virtual:bytes=%lu rss:bytes=%lu data:bytes=%lu\n", vsz, rss, data)
 }
 
