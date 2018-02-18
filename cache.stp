@@ -38,12 +38,17 @@ probe kernel.function("ext4_mpage_readpages") {
 
 probe bitcoind = process("/home/evan/code/bitcoin/src/bitcoind") {}
 
-// record when cache flushes start
-probe bitcoind.mark("cache__flush") {
+function show_time() {
   t = gettimeofday_us()
   secs = t / 1000000
   micros = t % 1000000
-  printf("flush coins:count=%lu coins:bytes=%lu t=%lu.%06lu\n", $arg1, $arg2, secs, micros)
+  printf("time t=%lu.%06lu\n", secs, micros)
+}
+
+// record when cache flushes start
+probe bitcoind.mark("cache__flush") {
+  show_time()
+  printf("flush coins:count=%lu coins:bytes=%lu\n", $arg1, $arg2)
   println()
 }
 
@@ -98,10 +103,7 @@ function show_mem() {
 
 function show_all() {
   // print the timestamp for these events
-  t = gettimeofday_us()
-  secs = t / 1000000
-  micros = t % 1000000
-  printf("time t=%lu.%06lu\n", secs, micros)
+  show_time()
 
   // now show the events
   @showmap("bio", bio)
