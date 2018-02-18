@@ -15,9 +15,10 @@ import pandas as pd
 # Expected sections in the input file to remap
 EXPECTED_SECTIONS = 2
 
+SECTION_RE = re.compile(r'^--- ([a-z]+)$')
 FILE_RE = re.compile(r'^.*?-(\d+)\.log$')
 
-Field = Union[datetime.datetime, int]
+Field = Union[datetime.datetime, pd.Timestamp, int, str]
 
 
 def arrange_fields(fields: Set[str]) -> List[str]:
@@ -32,6 +33,10 @@ def split_fields(fields: List[str]) -> Dict[str, Field]:
         val = 0  # type: Field
         if k == 't':
             val = datetime.datetime.fromtimestamp(float(v))
+        elif k == 'data':
+            val = v
+        elif k.endswith(':time'):
+            val = pd.Timestamp(int(v) * 1000, unit='ns')
         else:
             val = int(v, 10)
         info[k] = val
@@ -40,9 +45,10 @@ def split_fields(fields: List[str]) -> Dict[str, Field]:
 
 class EventData:
     def __init__(self):
-        self.git = ''
+        self.hostinfo = {}
         self.config = ''
-        self.times = []  # type: List[datetime.datetime]
+        self.flush_times = []  # type: List[datetime.datetime]
+        self.data_times = []  # type: List[datetime.datetime]
         self.events = {}  # type: Dict[str, List[Dict[str, Field]]]
         self.event_fields = {}  # type: Dict[str, List[str]]
 
@@ -50,25 +56,29 @@ class EventData:
 def load_events(infile: TextIO) -> EventData:
     events = defaultdict(list)  # type: Dict[str, List[Dict[str, Field]]]
     event_fields = defaultdict(set)  # type: Dict[str, Set[str]]
-    section = 0
+    section = ''
 
     output = EventData()
 
     for line in infile:
         line = line.strip()
         if not line:
+            # ignore blank lines
             continue
-        elif line.startswith('---'):
-            section += 1
+        m = SECTION_RE.match(line)
+        if m:
+            section, = m.groups()
             continue
 
-        if section == 0:
-            output.git = line
+        if section == 'system':
+            k, v = line.split(' ', 1)
+            output.hostinfo[k] = v
             continue
-        elif section == 1:
+        elif section == 'config':
             output.config += line + '\n'
             continue
 
+        assert section == 'systemtap'
         fields = line.split()
         event = fields.pop(0)
         info = split_fields(fields)
@@ -76,26 +86,31 @@ def load_events(infile: TextIO) -> EventData:
         if event == 'begin':
             continue
         elif event == 'time':
-            output.times.append(info['t'])  # type: ignore
+            data, t = info['data'], info['t']
+            if data == 'timer':
+                output.data_times.append(t)
+            elif data == 'flush':
+                output.flush_times.append(t)
+            else:
+                assert False
         elif event == 'finish':
             break
         else:
+            # handle regular data
             events[event].append(info)
-
-        # track all the known fields
-        for k in info:
-            event_fields[event].add(k)
+            for k in info:
+                # track all the known fields
+                event_fields[event].add(k)
 
     output.event_fields = {k: list(sorted(v)) for k, v in event_fields.items()}
     output.events = dict(events)
     return output
 
 
-def create_flushes_frame(flushes: List[Dict[str, Field]]) -> pd.DataFrame:
-    times = [flush['t'] for flush in flushes]
+def create_flushes_frame(times: List[datetime.datetime],
+                         flushes: List[Dict[str, Field]]) -> pd.DataFrame:
     frame = pd.DataFrame(flushes, index=times)
     columns = frame.columns.tolist()
-    columns.remove('t')
     return frame[columns]
 
 
@@ -138,19 +153,21 @@ def unpack_data_strict(input_file: str) -> Dict[str, Any]:
     with open(input_file) as infile:
         data = load_events(infile)
 
-    frames = {}
+    frames = {'flushes': None}
     try:
-        frames['flushes'] = create_flushes_frame(data.events.pop('flush'))
+        frames['flushes'] = create_flushes_frame(data.flush_times,
+                                                 data.events.pop('flush'))
     except KeyError:
         print('WARNING: no flush events')
 
     for event, vec in data.events.items():
-        frames[event] = create_frame(data.times, vec, data.event_fields[event])
+        frames[event] = create_frame(data.data_times, vec,
+                                     data.event_fields[event])
 
     return {
         'filename': input_file,
         'frames': frames,
-        'git': data.git,
+        'hostinfo': data.hostinfo,
         'config': data.config
     }
 
