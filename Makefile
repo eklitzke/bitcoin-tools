@@ -1,4 +1,5 @@
 .PHONY: lint
 lint:
 	shellcheck $(wildcard *.sh)
-	mypy $(wildcard *.py)
+	flake8 $(wildcard *.py)
+	mypy --ignore-missing-imports $(wildcard *.py)

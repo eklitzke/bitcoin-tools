@@ -8,7 +8,7 @@ import datetime
 import os
 import re
 from collections import defaultdict
-from typing import List, Dict, Set, Any, TextIO, Tuple, Optional, Union
+from typing import List, Dict, Set, Any, TextIO, Union
 
 import pandas as pd
 
@@ -48,8 +48,8 @@ class EventData:
 
 
 def load_events(infile: TextIO) -> EventData:
-    events = defaultdict(list)
-    event_fields = defaultdict(set)
+    events = defaultdict(list)  # type: Dict[str, List[Dict[str, Field]]]
+    event_fields = defaultdict(set)  # type: Dict[str, Set[str]]
     section = 0
 
     output = EventData()
