@@ -86,8 +86,6 @@ def load_events(infile: TextIO) -> EventData:
         for k in info:
             event_fields[event].add(k)
 
-    print('finished processing {} lines from file'.format(len(output.times)))
-
     output.event_fields = {k: list(sorted(v)) for k, v in event_fields.items()}
     output.events = dict(events)
     return output
@@ -149,13 +147,18 @@ def unpack_data_strict(input_file: str) -> Dict[str, Any]:
     for event, vec in data.events.items():
         frames[event] = create_frame(data.times, vec, data.event_fields[event])
 
-    return {'filename': input_file, 'frames': frames}
+    return {
+        'filename': input_file,
+        'frames': frames,
+        'git': data.git,
+        'config': data.config
+    }
 
 
 def unpack_data() -> Dict[str, Any]:
     input_file = choose_input()
     assert input_file is not None
-    print('loading data from {}'.format(input_file))
+    print('Loading data from input file {}'.format(input_file))
     return unpack_data_strict(input_file)
 
 
