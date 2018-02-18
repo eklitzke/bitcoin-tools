@@ -7,44 +7,50 @@ probe begin {
   targetpid = target()
 }
 
-@define showmap(event, obj) %(
-  print(@event)
-  foreach([key] in @obj) {
-    printf(" %s=%d", key, @obj[key])
-  }
-  println()
-  delete @obj
-%)
-
+// information about vfs timing
 global vfs
 probe vfs.*.return {
   @checkpid
   vfs[name] += gettimeofday_us() - @entry(gettimeofday_us())
 }
 
+// also add this guy, which reads a page on ext4
 probe kernel.function("ext4_mpage_readpages").return {
   @checkpid
   vfs["ext4_mpage_readpages"] += gettimeofday_us() - @entry(gettimeofday_us())
 }
 
-probe bitcoind = process("/home/evan/code/bitcoin/src/bitcoind") {
+// information about bio ("block io") requests
+global bio
+probe ioblock.*, ioblock_trace.* {
+  @checkpid
+  bio[sprintf("call:%s", name)]++
 }
+
+// again, add information about ext4 mpages
+probe kernel.function("ext4_mpage_readpages") {
+  @checkpid
+  bio["ext4_mpage_readpages"] += $nr_pages
+  bio["call:ext4_mpage_readpages"]++
+}
+
+probe bitcoind = process("/home/evan/code/bitcoin/src/bitcoind") {}
 
 // record when cache flushes start
 probe bitcoind.mark("cache__flush") {
   t = gettimeofday_us()
   secs = t / 1000000
   micros = t % 1000000
-  printf("flush t=%lu.%06lu num_coins=%lu num_bytes=%lu\n", secs, micros, $arg1, $arg2)
+  printf("flush num_coins=%lu num_bytes=%lu t=%lu.%06lu\n", $arg1, $arg2, secs, micros)
 }
 
-// record cache hits
+// record CCoinsViewCache hits
 global hits
 probe bitcoind.mark("cache__hit") {
   hits++
 }
 
-// record cache misses
+// record CCoinsViewCache misses
 global misses
 probe bitcoind.mark("cache__miss") {
   misses++
@@ -64,17 +70,14 @@ probe bitcoind.mark("update__tip") {
   tip["progress"] = $arg4
 }
 
-global bio
-probe ioblock.*, ioblock_trace.* {
-  @checkpid
-  bio[sprintf("call:%s", name)]++
-}
-
-probe vfs.do_mpage_readpage, kernel.function("ext4_mpage_readpages") {
-  @checkpid
-  bio["mpage_readpages"] += $nr_pages
-  bio["call:mpage_readpages"]++
-}
+@define showmap(event, obj) %(
+  print(@event)
+  foreach([key] in @obj) {
+    printf(" %s=%d", key, @obj[key])
+  }
+  println()
+  delete @obj
+%)
 
 probe timer.sec(10) {
   // print the timestamp for these events
@@ -85,9 +88,14 @@ probe timer.sec(10) {
 
   // now show the events
   @showmap("bio", bio)
-  @showmap("updatetip", tip)
   @showmap("vfs", vfs)
   show_cache()
+
+  height = tip["height"]
+  progress = tip["progress"]
+  @showmap("updatetip", tip)
+  tip["height"] = height
+  tip["progress"] = progress
 }
 
 global start_time
