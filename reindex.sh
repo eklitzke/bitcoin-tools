@@ -36,6 +36,20 @@ git rev-parse HEAD > "$OUTFILE"
 sep
 popd &>/dev/null
 
+wait_for_finish() {
+  while true; do
+    if tac "$OUTFILE" | head -n 1 | grep ^finish; then
+      kill %1
+      break
+    fi
+    sleep 10
+  done
+}
+
 cat ~/.bitcoin/bitcoin.conf >> "$OUTFILE"
 sep
-stap -c "$BITCOIND -reindex-chainstate" "$SCRIPT" | tee -a "$OUTFILE"
+
+stap -c "$BITCOIND -reindex-chainstate" "$SCRIPT" | tee -a "$OUTFILE" &
+wait_for_finish &
+trap 'kill %1' INT
+wait
