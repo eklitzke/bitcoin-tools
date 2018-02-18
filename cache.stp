@@ -66,6 +66,7 @@ probe bitcoind.mark("update__tip") {
 
 global bio
 probe ioblock.*, ioblock_trace.* {
+  @checkpid
   bio[sprintf("call:%s", name)]++
 }
 
