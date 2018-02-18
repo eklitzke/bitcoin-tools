@@ -40,11 +40,15 @@ append() {
   echo "$@" >> "$OUTFILE"
 }
 
+# increase our fd limits (needed in the leveldb_tweaks branch)
+ulimit -Sn "$(ulimit -Hn)"
+
 echo "--- system" > "$OUTFILE"
 append "date $(date -u --iso-8601=seconds)"
 append "hostname $(hostname -s)"
 append "uname $(uname -r)"
 append "memtotal $(grep 'MemTotal.*kB' /proc/meminfo | awk '{print $2*1024}')"
+append "fdlimit $(ulimit -Sn)"
 pushd "$BITCOINDIR" &>/dev/null
 append "git:commit $(git rev-parse HEAD)"
 append "git:branch $(git rev-parse --abbrev-ref HEAD)"
@@ -55,16 +59,14 @@ cat ~/.bitcoin/bitcoin.conf >> "$OUTFILE"
 
 wait_for_finish() {
   while true; do
-    if tac "$OUTFILE" | head -n 1 | grep ^finish; then
-      kill %1
-      break
+    if tac "$OUTFILE" | head -n 1 | grep -q ^finish; then
+      killall bitcoind
+      return
     fi
     sleep 10
   done
 }
 
-# increase our fd limits (needed in the leveldb_tweaks branch)
-ulimit -Sn "$(ulimit -Hn)"
 
 # zero the log file
 if [ -f ~/.bitcoin/testnet3/debug.log ]; then
