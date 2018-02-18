@@ -72,7 +72,7 @@ probe ioblock.*, ioblock_trace.* {
 probe vfs.do_mpage_readpage, kernel.function("ext4_mpage_readpages") {
   @checkpid
   bio["mpage_readpages"] += $nr_pages
-  bio["mpage_readpages_calls"]++
+  bio["call:mpage_readpages"]++
 }
 
 probe timer.sec(10) {
