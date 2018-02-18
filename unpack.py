@@ -38,13 +38,22 @@ def split_fields(fields: List[str]) -> Dict[str, Field]:
     return info
 
 
-def load_events(infile: TextIO) -> Tuple[List[datetime.datetime], Dict[
-        str, List[Dict[str, Field]]], Dict[str, List[str]]]:
-    data = defaultdict(list)
+class EventData:
+    def __init__(self):
+        self.git = ''
+        self.config = ''
+        self.times = []  # type: List[datetime.datetime]
+        self.events = {}  # type: Dict[str, List[Dict[str, Field]]]
+        self.event_fields = {}  # type: Dict[str, List[str]]
+
+
+def load_events(infile: TextIO) -> EventData:
+    events = defaultdict(list)
     event_fields = defaultdict(set)
-    times = []  # type: List[datetime.datetime]
     section = 0
-    events_count = 0
+
+    output = EventData()
+
     for line in infile:
         line = line.strip()
         if not line:
@@ -52,7 +61,12 @@ def load_events(infile: TextIO) -> Tuple[List[datetime.datetime], Dict[
         elif line.startswith('---'):
             section += 1
             continue
-        elif section < EXPECTED_SECTIONS:
+
+        if section == 0:
+            output.git = line
+            continue
+        elif section == 1:
+            output.config += line + '\n'
             continue
 
         fields = line.split()
@@ -62,21 +76,21 @@ def load_events(infile: TextIO) -> Tuple[List[datetime.datetime], Dict[
         if event == 'begin':
             continue
         elif event == 'time':
-            times.append(info['t'])  # type: ignore
-        elif event == 'finish_ibd':
+            output.times.append(info['t'])  # type: ignore
+        elif event == 'finish':
             break
         else:
-            data[event].append(info)
+            events[event].append(info)
 
         # track all the known fields
         for k in info:
             event_fields[event].add(k)
-        events_count += 1
 
-    print('finished processing {} lines from file'.format(events_count))
+    print('finished processing {} lines from file'.format(len(output.times)))
 
-    event_fields = {k: list(sorted(v)) for k, v in event_fields.items()}
-    return times, dict(data), event_fields
+    output.event_fields = {k: list(sorted(v)) for k, v in event_fields.items()}
+    output.events = dict(events)
+    return output
 
 
 def create_flushes_frame(flushes: List[Dict[str, Field]]) -> pd.DataFrame:
@@ -88,7 +102,7 @@ def create_flushes_frame(flushes: List[Dict[str, Field]]) -> pd.DataFrame:
 
 
 def create_frame(times: List[datetime.datetime], data: List[Dict[str, Field]],
-                 columns: List[str]):
+                 columns: List[str]) -> pd.DataFrame:
     assert len(times) == len(data)
     for row in data:
         for col in columns:
@@ -124,16 +138,16 @@ def choose_output(input_file: str) -> str:
 
 def unpack_data_strict(input_file: str) -> Dict[str, Any]:
     with open(input_file) as infile:
-        times, events, event_fields = load_events(infile)
+        data = load_events(infile)
 
     frames = {}
     try:
-        frames['flushes'] = create_flushes_frame(events.pop('flush'))
+        frames['flushes'] = create_flushes_frame(data.events.pop('flush'))
     except KeyError:
         print('WARNING: no flush events')
 
-    for event, data in events.items():
-        frames[event] = create_frame(times, data, event_fields[event])
+    for event, vec in data.events.items():
+        frames[event] = create_frame(data.times, vec, data.event_fields[event])
 
     return {'filename': input_file, 'frames': frames}
 
