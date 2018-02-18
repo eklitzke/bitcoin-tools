@@ -65,9 +65,8 @@ probe bitcoind.mark("update__tip") {
 }
 
 global bio
-probe ioblock_trace.request {
-  @checkpid
-  bio["bio_requests"]++
+probe ioblock.*, ioblock_trace.* {
+  bio[sprintf("call:%s", name)]++
 }
 
 probe vfs.do_mpage_readpage, kernel.function("ext4_mpage_readpages") {
