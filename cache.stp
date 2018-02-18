@@ -1,4 +1,4 @@
-// global vars
+// systemtap script for profiling bitcoind
 
 @define checkpid %(if (pid() != targetpid) next %)
 
@@ -16,28 +16,15 @@ probe begin {
   delete @obj
 %)
 
-/*
-global vfsbytes
-probe vfs.read*.return, vfs.write*.return {
-  @checkpid
-  if ($return <= 0) next
-  if (devname == "N/A")
-    tag = sprintf("%s.cached", name)
-  else
-    tag = sprintf("%s.uncached", name)
-  vfsbytes[tag] += $return
-}
-*/
-
-global vfstime
+global vfs
 probe vfs.*.return {
   @checkpid
-  vfstime[name] += gettimeofday_us() - @entry(gettimeofday_us())
+  vfs[name] += gettimeofday_us() - @entry(gettimeofday_us())
 }
 
-function show_vfs() {
-  @showmap("vfstime", vfstime)
-  //@showmap("vfsbytes", vfsbytes)
+probe kernel.function("ext4_mpage_readpages").return {
+  @checkpid
+  vfs["ext4_mpage_readpages"] += gettimeofday_us() - @entry(gettimeofday_us())
 }
 
 probe bitcoind = process("/home/evan/code/bitcoin/src/bitcoind") {
@@ -69,11 +56,6 @@ function show_cache() {
   misses=0
 }
 
-probe bitcoind.mark("finish__ibd") {
-  println("finish_ibd")
-  exit()
-}
-
 global tip
 probe bitcoind.mark("update__tip") {
   tip["height"] = $arg1
@@ -82,39 +64,38 @@ probe bitcoind.mark("update__tip") {
   tip["progress"] = $arg4
 }
 
-global ioreqs
+global bio
 probe ioblock_trace.request {
-  ioreqs++
+  @checkpid
+  bio["bio_requests"]++
 }
 
-global mpages
 probe vfs.do_mpage_readpage, kernel.function("ext4_mpage_readpages") {
   @checkpid
-  mpages += $nr_pages
-}
-
-function show_ioreqs() {
-  printf("ioreqs bios=%lu mpage_readpages=%lu\n", ioreqs, mpages)
-  ioreqs = 0
-  mpages = 0
-}
-
-
-probe vfs.do_mpage_readpage.return, kernel.function("ext4_mpage_readpages").return {
-  @checkpid
-  vfstime["mpage_readpages"] += gettimeofday_us() - @entry(gettimeofday_us())
+  bio["mpage_readpages"] += $nr_pages
+  bio["mpage_readpages_calls"]++
 }
 
 probe timer.sec(10) {
   // print the timestamp for these events
   t = gettimeofday_us()
   secs = t / 1000000
-  nanos = t % 1000000
-  printf("time t=%lu.%06lu\n", secs, nanos)
+  micros = t % 1000000
+  printf("time t=%lu.%06lu\n", secs, micros)
 
   // now show the events
+  @showmap("bio", bio)
   @showmap("updatetip", tip)
+  @showmap("vfs", vfs)
   show_cache()
-  show_ioreqs()
-  show_vfs()
+}
+
+global start_time
+probe begin {
+  start_time = gettimeofday_s()
+}
+
+probe bitcoind.mark("finish__ibd") {
+  printf("finished ibd in %d seconds\n", gettimeofday_s() - start_time)
+  exit()  // N.B. doesn't exit in interactive mode
 }

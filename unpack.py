@@ -65,7 +65,7 @@ def create_frame(times: List[datetime.datetime], data: List[Dict[str, Any]],
     assert len(times) == len(data)
     for row in data:
         for col in columns:
-            row.setdefault(col, 0)
+            row.setdefault(col, None)
     return pd.DataFrame(data, index=times)
 
 
