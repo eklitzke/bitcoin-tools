@@ -11,29 +11,29 @@ probe begin {
 global vfs
 probe vfs.*.return {
   @checkpid
-  vfs[sprintf("count:%s", name)]++
-  vfs[sprintf("time:%s", name)] += gettimeofday_us() - @entry(gettimeofday_us())
+  vfs[sprintf("%s:count", name)]++
+  vfs[sprintf("%s:time", name)] += gettimeofday_us() - @entry(gettimeofday_us())
 }
 
 // also add this guy, which reads a page on ext4
 probe kernel.function("ext4_mpage_readpages").return {
   @checkpid
-  vfs["count:ext4_mpage_readpages"]++
-  vfs["time:ext4_mpage_readpages"] += gettimeofday_us() - @entry(gettimeofday_us())
+  vfs["ext4_mpage_readpages:count"]++
+  vfs["ext4_mpage_readpages:time"] += gettimeofday_us() - @entry(gettimeofday_us())
 }
 
 // information about bio ("block io") requests
 global bio
 probe ioblock.*, ioblock_trace.* {
   @checkpid
-  bio[sprintf("count:%s", name)]++
+  bio[sprintf("%s:count", name)]++
 }
 
 // again, add information about ext4 mpages
 probe kernel.function("ext4_mpage_readpages") {
   @checkpid
-  bio["pages:ext4_mpage_readpages"] += $nr_pages
-  bio["count:ext4_mpage_readpages"]++
+  bio["ext4_mpage_readpages:pages"] += $nr_pages
+  bio["ext4_mpage_readpages:count"]++
 }
 
 probe bitcoind = process("/home/evan/code/bitcoin/src/bitcoind") {}
@@ -43,7 +43,7 @@ probe bitcoind.mark("cache__flush") {
   t = gettimeofday_us()
   secs = t / 1000000
   micros = t % 1000000
-  printf("flush count:coins=%lu count:bytes=%lu t=%lu.%06lu\n", $arg1, $arg2, secs, micros)
+  printf("flush coins:count=%lu coins:bytes=%lu t=%lu.%06lu\n", $arg1, $arg2, secs, micros)
   println()
 }
 
@@ -68,15 +68,15 @@ function show_cache() {
 global tip
 probe bitcoind.mark("update__tip") {
   tip["height"] = $arg1
-  tip["count:utxo"] = $arg2
-  tip["memory:utxo"] = $arg3
+  tip["utxo:count"] = $arg2
+  tip["utxo:size"] = $arg3
   tip["progress"] = $arg4
 }
 
 global leveldb
 probe bitcoind.function("leveldb::DBImpl::Get").return {
-  leveldb["count:get"]++
-  leveldb["time:get"] += gettimeofday_us() - @entry(gettimeofday_us())
+  leveldb["get:count"]++
+  leveldb["get:time"] += gettimeofday_us() - @entry(gettimeofday_us())
 }
 
 function show_mem() {
@@ -84,7 +84,7 @@ function show_mem() {
   vsz = proc_mem_size() * page_size
   rss = proc_mem_rss() * page_size
   data = proc_mem_data() * page_size
-  printf("memory virtual=%lu rss=%lu data=%lu\n", vsz, rss, data)
+  printf("memory virtual:bytes=%lu rss:bytes=%lu data:bytes=%lu\n", vsz, rss, data)
 }
 
 @define showmap(event, obj) %(
@@ -130,6 +130,6 @@ probe begin {
 }
 
 probe bitcoind.mark("finish__ibd") {
-  printf("finish seconds=%d\n", gettimeofday_s() - start_time)
+  printf("finish elapsed:time=%d\n", gettimeofday_s() - start_time)
   exit()  // N.B. doesn't exit in interactive mode
 }

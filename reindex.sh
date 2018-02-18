@@ -10,7 +10,12 @@ if [ ! -d ~/logs ]; then
 fi
 OUTFILE="$HOME/logs/$(hostname -s)-$(date '+%s').log"
 
-sep() { echo "---" >> "$OUTFILE"; }
+sep() {
+  if [ $# -ne 1 ]; then
+    return 1
+  fi
+  echo "--- $1" >> "$OUTFILE"
+}
 
 SCRIPTDIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
 SCRIPT="$SCRIPTDIR/cache.stp"
@@ -31,10 +36,22 @@ fi
 echo "sending log output to $OUTFILE"
 echo
 
+append() {
+  echo "$@" >> "$OUTFILE"
+}
+
+echo "--- system" > "$OUTFILE"
+append "date $(date -u --iso-8601=seconds)"
+append "hostname $(hostname -s)"
+append "uname $(uname -r)"
+append "memtotal $(grep 'MemTotal.*kB' /proc/meminfo | awk '{print $2*1024}')"
 pushd "$BITCOINDIR" &>/dev/null
-git rev-parse HEAD > "$OUTFILE"
-sep
+append "git:commit $(git rev-parse HEAD)"
+append "git:branch $(git rev-parse --abbrev-ref HEAD)"
 popd &>/dev/null
+
+sep config
+cat ~/.bitcoin/bitcoin.conf >> "$OUTFILE"
 
 wait_for_finish() {
   while true; do
@@ -46,9 +63,7 @@ wait_for_finish() {
   done
 }
 
-cat ~/.bitcoin/bitcoin.conf >> "$OUTFILE"
-sep
-
+sep systemtap
 stap -c "$BITCOIND -reindex-chainstate" "$SCRIPT" | tee -a "$OUTFILE" &
 wait_for_finish &
 trap 'kill %1' INT
