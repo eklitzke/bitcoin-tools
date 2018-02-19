@@ -23,7 +23,7 @@ def plot(df, title=None, secondary_y=[], ylabel='', ylabel2=''):
         ax.set_ylabel(ylabel)
     if ylabel2:
         ax.right_ax.set_ylabel(ylabel2)
-    if g_flushes:
+    if g_flushes is not None:
         overlay_flushes(g_flushes.index)
 
 

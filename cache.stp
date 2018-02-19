@@ -84,6 +84,21 @@ probe bitcoind.function("leveldb::DBImpl::Get").return {
   leveldb["get:time"] += gettimeofday_us() - @entry(gettimeofday_us())
 }
 
+probe bitcoind.function("leveldb::DBImpl::Put").return {
+  leveldb["put:count"]++
+  leveldb["put:time"] += gettimeofday_us() - @entry(gettimeofday_us())
+}
+
+probe bitcoind.function("leveldb::DBImpl::Write").return {
+  leveldb["write:count"]++
+  leveldb["write:time"] += gettimeofday_us() - @entry(gettimeofday_us())
+}
+
+probe bitcoind.function("leveldb::DBImpl::Delete").return {
+  leveldb["delete:count"]++
+  leveldb["delete:time"] += gettimeofday_us() - @entry(gettimeofday_us())
+}
+
 function show_mem() {
   page_size = mem_page_size()
   vsz = proc_mem_size(targetpid) * page_size

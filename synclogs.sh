@@ -10,6 +10,7 @@ fi
 
 pushd ~/logs &>/dev/null
 for h in "$@"; do
-  rsync -avz "$h:logs/" .
+  rsync -az "$h:logs/" . &
 done
 popd &>/dev/null
+wait
