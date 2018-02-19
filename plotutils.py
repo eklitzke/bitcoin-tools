@@ -2,12 +2,17 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from typing import Optional  # noqa
 
-flushes = None  # type: Optional[pd.DataFrame]
+g_flushes = None  # type: Optional[pd.DataFrame]
 
 
 def set_flushes(val: pd.DataFrame):
-    global flushes
-    flushes = val
+    global g_flushes
+    g_flushes = val
+
+
+def overlay_flushes(flushes):
+    for t in flushes:
+        plt.axvline(x=t, color='k', linestyle=':')
 
 
 def plot(df, title=None, secondary_y=[], ylabel='', ylabel2=''):
@@ -18,8 +23,8 @@ def plot(df, title=None, secondary_y=[], ylabel='', ylabel2=''):
         ax.set_ylabel(ylabel)
     if ylabel2:
         ax.right_ax.set_ylabel(ylabel2)
-    for t in flushes.index:
-        plt.axvline(x=t, color='k', linestyle=':')
+    if g_flushes:
+        overlay_flushes(g_flushes.index)
 
 
 def strip_suffix(label: str) -> str:
