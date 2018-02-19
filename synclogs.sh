@@ -9,5 +9,5 @@ if [ $# -ne 1 ]; then
 fi
 
 pushd ~/logs &>/dev/null
-rsync -avz "$1:logs" .
+rsync -avz "$1:logs/" .
 popd &>/dev/null

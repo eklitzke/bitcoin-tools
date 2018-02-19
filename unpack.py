@@ -18,7 +18,7 @@ EXPECTED_SECTIONS = 2
 SECTION_RE = re.compile(r'^--- ([a-z]+)$')
 FILE_RE = re.compile(r'^.*?-(\d+)\.log$')
 
-Field = Union[datetime.datetime, pd.Timestamp, int, str]
+Field = Union[datetime.datetime, pd.Timedelta, int, str, float]
 
 
 def arrange_fields(fields: Set[str]) -> List[str]:
@@ -35,8 +35,10 @@ def split_fields(fields: List[str]) -> Dict[str, Field]:
             val = datetime.datetime.fromtimestamp(float(v))
         elif k == 'data':
             val = v
+        elif k == 'progress':
+            val = float(v) / 1e6
         elif k.endswith(':time'):
-            val = pd.Timestamp(int(v) * 1000, unit='ns')
+            val = pd.Timedelta(int(v) * 1000, unit='ns')
         else:
             val = int(v, 10)
         info[k] = val
@@ -129,6 +131,7 @@ def choose_input() -> str:
     """Choose a good input file to process."""
     logsdir = os.path.expanduser('~/logs')
     best_timestamp = 0
+    logfile = None
     for f in os.listdir(logsdir):
         m = FILE_RE.match(f)
         if m:
