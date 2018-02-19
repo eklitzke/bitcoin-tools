@@ -74,9 +74,10 @@ def load_events(infile: TextIO) -> EventData:
 
         if section == 'system':
             k, v = line.split(' ', 1)
+            val = v  # type:Field
             if k.endswith(':bytes') or k.endswith(':count'):
-                v = int(v)
-            output.hostinfo[k] = v
+                val = int(v)
+            output.hostinfo[k] = val
             continue
         elif section == 'config':
             output.config += line + '\n'
@@ -91,6 +92,7 @@ def load_events(infile: TextIO) -> EventData:
             continue
         elif event == 'time':
             data, t = info['data'], info['t']
+            assert isinstance(t, datetime.datetime)
             if data == 'timer':
                 output.data_times.append(t)
             elif data == 'flush':
@@ -127,12 +129,14 @@ def create_frame(times: List[datetime.datetime], data: List[Dict[str, Field]],
     return pd.DataFrame(data, index=times)
 
 
-def choose_input() -> str:
+def choose_input(prefix: str = '') -> str:
     """Choose a good input file to process."""
     logsdir = os.path.expanduser('~/logs')
     best_timestamp = 0
     logfile = None
     for f in os.listdir(logsdir):
+        if not f.startswith(prefix):
+            continue
         m = FILE_RE.match(f)
         if m:
             ts_str, = m.groups()
@@ -177,8 +181,8 @@ def unpack_data_strict(input_file: str) -> Dict[str, Any]:
     }
 
 
-def unpack_data() -> Dict[str, Any]:
-    input_file = choose_input()
+def unpack_data(prefix: str = '') -> Dict[str, Any]:
+    input_file = choose_input(prefix)
     assert input_file is not None
     print('Loading data from input file {}'.format(input_file))
     return unpack_data_strict(input_file)
