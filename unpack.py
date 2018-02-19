@@ -16,6 +16,7 @@ import pandas as pd
 EXPECTED_SECTIONS = 2
 
 SECTION_RE = re.compile(r'^--- ([a-z]+)$')
+HOST_RE = re.compile(r'^([a-zA-Z0-9.-]+)-\d+\.log$')
 FILE_RE = re.compile(r'^.*?-(\d+)\.log$')
 
 Field = Union[datetime.datetime, pd.Timedelta, int, str, float]
@@ -129,24 +130,29 @@ def create_frame(times: List[datetime.datetime], data: List[Dict[str, Field]],
     return pd.DataFrame(data, index=times)
 
 
-def choose_input(prefix: str = '') -> str:
+def choose_input(host: str = '') -> str:
     """Choose a good input file to process."""
     logsdir = os.path.expanduser('~/logs')
     best_timestamp = 0
     logfile = None
     for f in os.listdir(logsdir):
-        if not f.startswith(prefix):
-            continue
+        if host:
+            m = HOST_RE.match(f)
+            if not m:
+                continue
+            file_host, = m.groups()
+            if file_host != host:
+                continue
         m = FILE_RE.match(f)
-        if m:
-            ts_str, = m.groups()
-            ts = int(ts_str, 10)
-            if ts > best_timestamp:
-                best_timestamp = ts
-                logfile = os.path.join(logsdir, f)
+        if not m:
+            continue
+        ts_str, = m.groups()
+        ts = int(ts_str, 10)
+        if ts > best_timestamp:
+            best_timestamp = ts
+            logfile = os.path.join(logsdir, f)
     if logfile is None:
-        raise ValueError(
-            'Failed to autodetect input file, please specify one with -f')
+        raise ValueError('Failed to autodetect input file')
     return logfile
 
 
@@ -181,8 +187,8 @@ def unpack_data_strict(input_file: str) -> Dict[str, Any]:
     }
 
 
-def unpack_data(prefix: str = '') -> Dict[str, Any]:
-    input_file = choose_input(prefix)
+def unpack_data(host: str = '') -> Dict[str, Any]:
+    input_file = choose_input(host)
     assert input_file is not None
     print('Loading data from input file {}'.format(input_file))
     return unpack_data_strict(input_file)
