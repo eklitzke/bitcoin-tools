@@ -5,6 +5,18 @@
 
 set -eu
 
+COMMENT=
+while getopts ":m:" opt; do
+  case $opt in
+    m)
+      COMMENT="$OPTARG"
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      ;;
+  esac
+done
+
 if [ ! -d ~/logs ]; then
   mkdir ~/logs
 fi
@@ -47,6 +59,7 @@ echo "--- system" > "$OUTFILE"
 append "date $(date -u --iso-8601=seconds)"
 append "hostname $(hostname -s)"
 append "uname $(uname -r)"
+append "comment \"$COMMENT\""
 append "memtotal:bytes $(grep 'MemTotal.*kB' /proc/meminfo | awk '{print $2*1024}')"
 append "fdlimit:count $(ulimit -Sn)"
 pushd "$BITCOINDIR" &>/dev/null
