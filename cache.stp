@@ -36,6 +36,11 @@ probe kernel.function("ext4_mpage_readpages") {
   bio["ext4_mpage_readpages:count"]++
 }
 
+global syscall
+probe syscall.mmap2, syscall.munmap, syscall.open, syscall.close {
+  syscall[name]++
+}
+
 probe bitcoind = process("/home/evan/code/bitcoin/src/bitcoind") {}
 
 function show_time(data: string) {
@@ -124,6 +129,7 @@ function show_all() {
   @showmap("bio", bio)
   @showmap("vfs", vfs)
   @showmap("leveldb", leveldb)
+  @showmap("syscall", syscall)
   show_cache()
   show_mem()
 
