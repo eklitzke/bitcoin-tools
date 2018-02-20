@@ -42,6 +42,22 @@ probe syscall.mmap2, syscall.munmap {
   syscall[sprintf("%s:count", name)]++
 }
 
+// Attempt to track open files. This only counts regular files (not sockets).
+global fdcount
+probe syscall.open*.return {
+  @checkpid
+  if ($return >= 0) fdcount++
+}
+
+probe syscall.close.return {
+  @checkpid
+  if ($return == 0) fdcount--
+}
+
+function show_fdcount() {
+  printf("fdcount fd:count=%lu\n", fdcount)
+}
+
 probe bitcoind = process("/home/evan/code/bitcoin/src/bitcoind") {}
 
 function show_time(data: string) {
@@ -132,6 +148,7 @@ function show_all() {
   @showmap("leveldb", leveldb)
   @showmap("syscall", syscall)
   show_cache()
+  show_fdcount()
   show_mem()
 
   height = tip["height"]
