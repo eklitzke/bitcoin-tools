@@ -38,7 +38,8 @@ probe kernel.function("ext4_mpage_readpages") {
 
 global syscall
 probe syscall.mmap2, syscall.munmap, syscall.open, syscall.close {
-  syscall[name]++
+  @checkpid
+  syscall[sprintf("%s:count", name)]++
 }
 
 probe bitcoind = process("/home/evan/code/bitcoin/src/bitcoind") {}
