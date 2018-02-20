@@ -37,7 +37,7 @@ probe kernel.function("ext4_mpage_readpages") {
 }
 
 global syscall
-probe syscall.mmap2, syscall.munmap, syscall.open, syscall.close {
+probe syscall.mmap2, syscall.munmap {
   @checkpid
   syscall[sprintf("%s:count", name)]++
 }
