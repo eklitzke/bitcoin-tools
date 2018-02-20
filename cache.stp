@@ -1,6 +1,12 @@
 // systemtap script for profiling bitcoind
 
+global start_time
+probe begin {
+  start_time = gettimeofday_us()
+}
+
 @define checkpid %(if (pid() != targetpid) next %)
+@define checkreturn %(if ($return < 0) next %)
 
 global targetpid
 probe begin {
@@ -36,35 +42,18 @@ probe kernel.function("ext4_mpage_readpages") {
   bio["ext4_mpage_readpages:count"]++
 }
 
-global syscall
-probe syscall.mmap2, syscall.munmap {
-  @checkpid
-  syscall[sprintf("%s:count", name)]++
-}
-
-// Attempt to track open files. This only counts regular files (not sockets).
-global fdcount
-probe syscall.open*.return {
-  @checkpid
-  if ($return >= 0) fdcount++
-}
-
-probe syscall.close.return {
-  @checkpid
-  if ($return == 0) fdcount--
-}
-
-function show_fdcount() {
-  printf("fdcount fd:count=%lu\n", fdcount)
-}
-
 probe bitcoind = process("/home/evan/code/bitcoin/src/bitcoind") {}
 
 function show_time(data: string) {
   t = gettimeofday_us()
   secs = t / 1000000
   micros = t % 1000000
-  printf("time t=%lu.%06lu data=%s\n", secs, micros, data)
+
+  elapsed = t - start_time
+  elapsed_secs = elapsed / 1000000
+  elapsed_micros = elapsed % 1000000
+
+  printf("time t=%lu.%06lu elapsed=%lu.%06lu data=%s\n", secs, micros, elapsed_secs, elapsed_micros, data)
 }
 
 // record when cache flushes start
@@ -146,9 +135,7 @@ function show_all() {
   @showmap("bio", bio)
   @showmap("vfs", vfs)
   @showmap("leveldb", leveldb)
-  @showmap("syscall", syscall)
   show_cache()
-  show_fdcount()
   show_mem()
 
   height = tip["height"]
@@ -160,17 +147,11 @@ function show_all() {
   println()
 }
 
-probe timer.sec(10) {
-  show_all()
-}
-
-global start_time
-probe begin {
-  start_time = gettimeofday_s()
+probe begin, timer.sec(10) {
   show_all()
 }
 
 probe bitcoind.mark("finish__ibd") {
-  printf("finish elapsed:time=%d\n", gettimeofday_s() - start_time)
+  printf("finish elapsed:time=%d\n", gettimeofday_us() - start_time)
   exit()  // N.B. doesn't exit in interactive mode
 }
