@@ -17,6 +17,11 @@ while getopts ":m:" opt; do
   esac
 done
 
+if [ -z "$COMMENT" ];then
+  echo "Error: no comment!"
+  exit 1
+fi
+
 if [ ! -d ~/logs ]; then
   mkdir ~/logs
 fi
