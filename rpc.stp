@@ -1,0 +1,10 @@
+
+probe bitcoind = process("/home/evan/code/bitcoin/src/bitcoind") {}
+
+probe bitcoind.mark("rpc__command") {
+  printf("rpc command: %s\n", user_string($arg1))
+}
+
+probe begin {
+  println("begin")
+}
