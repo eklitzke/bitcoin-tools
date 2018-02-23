@@ -1,15 +1,16 @@
 sizeof COutPoint=36
 sizeof CCoinsCacheEntry=56
 
-total utxo as of 2018-02-05: 57.3M entries
+total utxo as of 2018-02-21: 59M entries
 
 with no gaps = 5.27G of memory
+(actual on disk size is slightly smaller, because flags field can be omitted)
 
 testnet-1518740047.log.xz is testnet synced with these settings:
-testnet=1                 
-dbcache=512               
-maxmempoolsize=0          
-limitdescendantsize=0   
+testnet=1
+dbcache=512
+maxmempoolsize=0
+limitdescendantsize=0
 
 
 testnet-default-1518743746.log.xz is testnet synced with default settings

@@ -34,6 +34,8 @@ def split_fields(fields: List[str]) -> Dict[str, Field]:
         val = 0  # type: Field
         if k == 't':
             val = datetime.datetime.fromtimestamp(float(v))
+        elif k == 'elapsed':
+            val = datetime.timedelta(seconds=float(v))
         elif k == 'data':
             val = v
         elif k == 'progress':
@@ -165,6 +167,9 @@ def choose_output(input_file: str) -> str:
 
 
 def unpack_data_strict(input_file: str) -> Dict[str, Any]:
+    if input_file.startswith('~'):
+        input_file = os.path.expanduser(input_file)
+
     with open(input_file) as infile:
         data = load_events(infile)
 
