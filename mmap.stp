@@ -1,0 +1,5 @@
+probe bitcoind = process("/home/evan/code/bitcoin/src/bitcoind") {}
+
+probe bitcoind.statement("*@/home/evan/code/bitcoin/src/leveldb/util/env_posix.cc:361") {
+	println("hit the probe")
+}

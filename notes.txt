@@ -6,11 +6,18 @@ total utxo as of 2018-02-21: 59M entries
 with no gaps = 5.27G of memory
 (actual on disk size is slightly smaller, because flags field can be omitted)
 
-testnet-1518740047.log.xz is testnet synced with these settings:
-testnet=1
-dbcache=512
-maxmempoolsize=0
-limitdescendantsize=0
+sipa talk on elliptic curves
+----------------------------
+strauss' algorithm
+bos-coster
+pippinger algorithm
 
+https://cr.yp.to/papers/pippenger.pdf
+https://cryptojedi.org/peter/data/eccss-20130911b.pdf
 
-testnet-default-1518743746.log.xz is testnet synced with default settings
+naf -- non adjacent form: -1 0 1
+
+19 A = 1 0 0 1  1
+       1 0 1 0 -1
+
+wnaf = windowed non adjacent form, -3 -1 0 1 3
