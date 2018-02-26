@@ -1,0 +1,4 @@
+probe process("/home/evan/code/bitcoin/src/bitcoind").mark("leveldb__open") {
+  fname = user_string($arg1)
+  printf("file=%s index_size=%lu filter_size=%lu\n", fname, $arg2, $arg3)
+}
