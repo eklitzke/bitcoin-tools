@@ -1,3 +1,4 @@
+humanfriendly
 flake8
 matplotlib
 mypy
