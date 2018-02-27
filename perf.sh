@@ -4,11 +4,6 @@
 
 set -eu
 
-# If this is 1, then we filter out background LevelDB compaction work (usually
-# what you want, as that happens asynchronously in another thread, and pollutes
-# graphs).
-NOBGTHREAD=1
-
 # How often to poll.
 FREQUENCY=
 
@@ -24,9 +19,8 @@ DWARF=1
 # Output file.
 OUTPUT=
 
-while getopts ":b:d:f:F:h:o:p:t:x" opt; do
+while getopts ":df:F:ho:p:t:x" opt; do
   case $opt in
-    b) NOBGTHREAD=0 ;;
     d) DWARF=0 ;;
     f) ;&
     F) FREQUENCY="$OPTARG" ;;
@@ -63,55 +57,6 @@ if [ -z "$PID" ] && [ -z "$FREQUENCY" ]; then
   FREQUENCY=99
 fi
 
-# have we found the flamegraph installation?
-haveflamegraph() {
-  test -x "${FLAMEGRAPHDIR}/flamegraph.pl"
-}
-
-# try to find a flamegraph installation
-findflamegraph() {
-  set +u
-  trap 'set -u' RETURN
-  if [ -z "$FLAMEGRAPHDIR" ]; then
-    FLAMEGRAPHDIR=.
-    if haveflamegraph; then
-      return
-    fi
-    FLAMEGRAPHDIR=../FlameGraph
-    if haveflamegraph; then
-      return
-    fi
-    return 1
-  fi
-}
-
-collapse() {
-  perf script | "${FLAMEGRAPHDIR}/stackcollapse-perf.pl"
-}
-
-gensvg() {
-  "${FLAMEGRAPHDIR}/flamegraph.pl" > "$OUTPUT"
-}
-
-# cleanup logic if we need to generate an svg
-svgcleanup() {
-  if [ -n "$(jobs)" ]; then
-    kill %1
-    wait
-  fi
-
-  if [ "$NOBGTHREAD" -eq 1 ]; then
-    collapse | grep -v BGThreadWrapper | gensvg
-  else
-    collapse | gensvg
-  fi
-}
-
-# run perf record
-dorecord() {
-  exec perf record "${ARGS[@]}"
-}
-
 ARGS=(-g)
 
 if [ -n "$FREQUENCY" ]; then
@@ -125,11 +70,29 @@ fi
 if [ -n "$PID" ]; then
   ARGS+=(-p "$PID" -- sleep "$TIME")
 else
-  ARGS+=("$*")
+  ARGS+=($*)
 fi
 
+gensvg() {
+  "$(dirname "${BASH_SOURCE[0]}")/gensvg.sh" "$@"
+}
+
+# cleanup logic if we need to generate an svg
+svgcleanup() {
+  if [ -n "$(jobs)" ]; then
+    kill %1
+    wait
+  fi
+  perf script | gensvg -o "$OUTPUT"
+}
+
+# run perf record
+dorecord() {
+  exec perf record "${ARGS[@]}"
+}
+
 if [ -n "$OUTPUT" ]; then
-  if findflamegraph; then
+  if gensvg -t; then
     dorecord &
     trap svgcleanup EXIT INT
     wait
