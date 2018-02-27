@@ -44,14 +44,20 @@ haveflamegraph() {
 # try to find a flamegraph installation
 findflamegraph() {
   if [ -z "$FLAMEGRAPHDIR" ]; then
+    if haveflamegraph; then
+      return
+    fi
+
     FLAMEGRAPHDIR=.
     if haveflamegraph; then
       return
     fi
+
     FLAMEGRAPHDIR=../FlameGraph
     if haveflamegraph; then
       return
     fi
+
     return 1
   fi
 }
