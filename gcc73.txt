@@ -1,0 +1,27 @@
+git f0e7aa702095b22ba57a763c5c093e15d41586d1
+# Benchmark, evals, iterations, total, min, max, median
+PrevectorClearNontrivial, 5, 28300, 22.5172, 0.000158233, 0.000160857, 0.000158989
+PrevectorClearTrivial, 5, 88600, 58.3269, 0.000131383, 0.000132152, 0.000131495
+PrevectorDestructorNontrivial, 5, 28800, 22.8294, 0.000158187, 0.000158971, 0.000158322
+PrevectorDestructorTrivial, 5, 88900, 58.495, 0.000131325, 0.000132086, 0.000131456
+PrevectorResizeNontrivial, 5, 28900, 22.9155, 0.000158295, 0.000159033, 0.000158518
+PrevectorResizeTrivial, 5, 90300, 58.7146, 0.000129527, 0.000130571, 0.000129851
+
+git e46be25f0e19d574157752a5c0b674907a1578e6
+# Benchmark, evals, iterations, total, min, max, median
+PrevectorClearNontrivial, 5, 28300, 6.92057, 4.88317e-05, 4.89513e-05, 4.89286e-05
+PrevectorClearTrivial, 5, 88600, 21.3533, 4.79571e-05, 4.87759e-05, 4.81217e-05
+PrevectorDestructorNontrivial, 5, 28800, 7.22225, 4.89658e-05, 5.37432e-05, 4.94412e-05
+PrevectorDestructorTrivial, 5, 88900, 21.3527, 4.79502e-05, 4.81658e-05, 4.79828e-05
+PrevectorResizeNontrivial, 5, 28900, 7.07468, 4.88958e-05, 4.90413e-05, 4.89689e-05
+PrevectorResizeTrivial, 5, 90300, 21.6811, 4.79838e-05, 4.80761e-05, 4.80065e-05
+
+git 3f9abf49d7f96b53719ee99e5c7cd28d9c4c04af
+# Benchmark, evals, iterations, total, min, max, median
+PrevectorClearNontrivial, 5, 28300, 3.99415, 2.56308e-05, 3.21288e-05, 2.59529e-05
+PrevectorClearTrivial, 5, 88600, 2.8458, 6.38623e-06, 6.49748e-06, 6.39799e-06
+PrevectorDestructorNontrivial, 5, 28800, 3.73168, 2.58108e-05, 2.60747e-05, 2.58583e-05
+PrevectorDestructorTrivial, 5, 88900, 2.8514, 6.39326e-06, 6.45981e-06, 6.40997e-06
+PrevectorResizeNontrivial, 5, 28900, 3.71225, 2.56163e-05, 2.59058e-05, 2.56362e-05
+PrevectorResizeTrivial, 5, 90300, 2.89984, 6.38714e-06, 6.45907e-06, 6.40775e-06
+
