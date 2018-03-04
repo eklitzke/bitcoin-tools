@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# PID to profile.
+PID=
+TIME=60
+while getopts ":p:t:" opt; do
+  case $opt in
+    p) PID="$OPTARG" ;;
+    t) TIME="$OPTARG" ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      exit 1
+      ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+if [ -z "$PID" ]; then
+  echo "Missing -p PID"
+  exit 1
+fi
+
+perf record -g --call-graph dwarf -F 101 -p "$PID" "$@" -- sleep "$TIME"
+perf script 2>/dev/null | stackcollapse-perf.pl --all > /tmp/collapse.txt

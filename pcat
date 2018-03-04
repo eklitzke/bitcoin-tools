@@ -1,0 +1,106 @@
+#!/usr/bin/python3
+
+import argparse
+import base64
+import datetime
+import json
+import hashlib
+import os
+import subprocess
+import webbrowser
+
+from typing import List
+
+PROFILEDIR = os.path.expanduser('~/.profiles')
+
+
+def parse_list(value: str) -> List[str]:
+    """Parse a list argument."""
+    if not value:
+        return []
+    return value.split(',')
+
+
+def match_excludes(line: str, excludes: List[str]) -> bool:
+    """Exclude any input lines that match patterns in excludes."""
+    for exc in excludes:
+        if exc in line:
+            return False
+    return True
+
+
+def match_includes(line: str, includes: List[str]) -> bool:
+    """Only include lines that match all includes."""
+    for inc in includes:
+        if inc not in line:
+            return False
+    return True
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-i', '--input', default='/tmp/collapse.txt', help='Input file')
+    parser.add_argument('-o', '--output', default=None, help='Output file')
+    parser.add_argument(
+        '-b', '--browser', default='firefox', help='Browser to use')
+    parser.add_argument(
+        '-n', '--no-browser', action='store_true', help='No browser')
+
+    parser.add_argument(
+        '-x', '--exclude', default='', help='Patterns to exclude')
+    parser.add_argument(
+        'include', nargs='?', default='', help='Patterns to include')
+    args = parser.parse_args()
+
+    includes = parse_list(args.include)
+    excludes = parse_list(args.exclude)
+
+    proc = subprocess.Popen(
+        ['flamegraph.pl'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
+    hasher = hashlib.new('sha256')
+
+    with open(args.input) as input_file:
+        for line in input_file:
+            if not match_excludes(line, excludes):
+                continue
+            if not match_includes(line, includes):
+                continue
+            bytestr = line.encode('utf-8')
+            hasher.update(bytestr)
+            proc.stdin.write(bytestr)
+
+    out, err = proc.communicate()
+    assert proc.returncode == 0
+
+    filehash = hasher.hexdigest()
+    name = args.output
+    if not name:
+        name = filehash[:10]
+
+    if not os.path.exists(PROFILEDIR):
+        os.makedirs(PROFILEDIR)
+
+    dest = os.path.join(PROFILEDIR, '{}.svg'.format(name))
+    now = datetime.datetime.now()
+    meta = {
+        'timestr': now.strftime('%Y-%m-%d %H:%M:%S'),
+        'timestamp': now.timestamp(),
+        'hash': filehash,
+        'includes': includes,
+        'excludes': excludes,
+    }
+    metadest = os.path.join(PROFILEDIR, '{}.json'.format(name))
+    with open(metadest, 'w') as metafile:
+        json.dump(meta, metafile)
+    with open(dest, 'wb') as svgfile:
+        svgfile.write(out)
+
+    if not args.no_browser:
+        browser = webbrowser.get(args.browser)
+        browser.open('file://' + os.path.abspath(dest))
+
+
+if __name__ == '__main__':
+    main()
