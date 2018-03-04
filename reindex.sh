@@ -3,7 +3,7 @@
 # Script to reindex bitcoind, in a format suitable for the exploration Python
 # scripts I have here. Somewhat specific to my setup.
 
-set -eu
+set -e
 
 COMMENT=
 while getopts ":m:" opt; do
@@ -34,19 +34,9 @@ sep() {
   echo "--- $1" >> "$OUTFILE"
 }
 
-SCRIPTDIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
-SCRIPT="$SCRIPTDIR/cache.stp"
-
-if [ ! -f "$SCRIPT" ]; then
-  echo "no cache.stp script!"
-  exit 1
-fi
-
-BITCOINDIR=$(realpath "$SCRIPTDIR"/../bitcoin)
-BITCOIND="$BITCOINDIR/src/bitcoind"
-
-if [ ! -d "$BITCOINDIR" ] || [ ! -x "$BITCOIND" ]; then
-  echo "failed to find bitcoind"
+BITCOINDIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")"/../bitcoin)
+if [ ! -d "$BITCOINDIR" ]; then
+  echo "no bitcoindir"
   exit 1
 fi
 
@@ -92,7 +82,10 @@ if [ -f ~/.bitcoin/testnet3/debug.log ]; then
 fi
 
 sep systemtap
-stap -c "$BITCOIND -reindex-chainstate" "$SCRIPT" | tee -a "$OUTFILE" &
+pushd "${BITCOINDIR}"
+. ./share/systemtap/activate.sh
+stap -c "bitcoind -reindex-chainstate" share/systemtap/cache.stp | tee -a "$OUTFILE" &
+popd
 wait_for_finish &
 trap 'kill %1' INT
 wait
