@@ -3,7 +3,7 @@
 # Script to reindex bitcoind, in a format suitable for the exploration Python
 # scripts I have here. Somewhat specific to my setup.
 
-set -e
+set -eu
 
 COMMENT=
 while getopts ":m:" opt; do
@@ -82,10 +82,10 @@ if [ -f ~/.bitcoin/testnet3/debug.log ]; then
 fi
 
 sep systemtap
-pushd "${BITCOINDIR}"
-. ./share/systemtap/activate.sh
-stap -c "bitcoind -reindex-chainstate" share/systemtap/cache.stp | tee -a "$OUTFILE" &
-popd
+pushd "${BITCOINDIR}" &>/dev/null
+PATH="$PWD/src:$PATH"
+stap -I share/systemtap/tapset -c "bitcoind -reindex-chainstate" share/systemtap/cache.stp | tee -a "$OUTFILE" &
+popd &>/dev/null
 wait_for_finish &
 trap 'kill %1' INT
 wait
