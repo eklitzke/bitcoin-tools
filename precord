@@ -1,10 +1,14 @@
 #!/bin/bash
 
 # PID to profile.
+ALL=0
 PID=
+MATCH=
 TIME=60
-while getopts ":p:t:x" opt; do
+while getopts ":am:p:t:x" opt; do
   case $opt in
+    a) ALL=1 ;;
+    m) MATCH="$OPTARG" ;;
     p) PID="$OPTARG" ;;
     t) TIME="$OPTARG" ;;
     x) set -x ;;
@@ -25,21 +29,21 @@ CMD=(perf record
      --call-graph dwarf
      -F 101
     )
-if [ -z "$PID" ]; then
-  echo "Capturing data for all processes..."
+
+if [ "$ALL" -eq 1 ]; then
   CMD+=(-a)
-else
+elif [ -n "$PID" ]; then
   CMD+=(-p "$PID")
+else
+  echo "Error: You must use -a or -p PID"
+  exit 1
 fi
 
 "${CMD[@]}" "$@" -- sleep "$TIME"
 
-script() {
-  if [ -z "$1" ]; then
-    perf script 2>/dev/null | stackcollapse-perf.pl --all | grep bitcoin
-  else
-    perf script 2>/dev/null | stackcollapse-perf.pl --all
-  fi
-}
+perf script 2>/dev/null | stackcollapse-perf.pl --all > /tmp/collapse.txt
 
-script "$PID" > /tmp/collapse.txt
+# very hacky
+if [ -n "$MATCH" ]; then
+  sed -i "/$MATCH/p" /tmp/collapse.txt
+fi
