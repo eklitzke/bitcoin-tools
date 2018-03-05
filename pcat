@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 
 import argparse
-import base64
 import datetime
 import json
 import hashlib
 import os
+import socket
 import subprocess
 import webbrowser
 
@@ -79,7 +79,8 @@ def main():
     filehash = hasher.hexdigest()
     name = args.output
     if not name:
-        name = filehash[:10]
+        hostname = socket.gethostname().split('.')[0]
+        name = '{}-{}'.format(hostname, filehash[:10])
 
     if not os.path.exists(PROFILEDIR):
         os.makedirs(PROFILEDIR)
@@ -87,6 +88,7 @@ def main():
     dest = os.path.join(PROFILEDIR, '{}.svg'.format(name))
     now = datetime.datetime.now()
     meta = {
+        'hostname': socket.gethostname(),
         'timestr': now.strftime('%Y-%m-%d %H:%M:%S'),
         'timestamp': now.timestamp(),
         'hash': filehash,
