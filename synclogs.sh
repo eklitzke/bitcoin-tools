@@ -5,11 +5,16 @@
 set -eu
 
 synchosts() {
-  pushd ~/logs &>/dev/null
+  if [ ! -d ~/logs ]; then
+    mkdir -p ~/logs
+  fi
+  if [ ! -d ~/.profiles ]; then
+    mkdir -p ~/.profiles
+  fi
   for h in "$@"; do
-    rsync -avz "$h:logs/" . &
+    rsync -avz "$h:logs/" ~/logs/ &
+    rsync -avz "$h:.profiles/" ~/.profiles/ &
   done
-  popd &>/dev/null
   wait
 }
 
