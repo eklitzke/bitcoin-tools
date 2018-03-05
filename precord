@@ -3,10 +3,11 @@
 # PID to profile.
 PID=
 TIME=60
-while getopts ":p:t:" opt; do
+while getopts ":p:t:x" opt; do
   case $opt in
     p) PID="$OPTARG" ;;
     t) TIME="$OPTARG" ;;
+    x) set -x ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
       exit 1
@@ -19,10 +20,26 @@ while getopts ":p:t:" opt; do
 done
 shift $((OPTIND - 1))
 
+CMD=(perf record
+     -g
+     --call-graph dwarf
+     -F 101
+    )
 if [ -z "$PID" ]; then
-  echo "Missing -p PID"
-  exit 1
+  echo "Capturing data for all processes..."
+  CMD+=(-a)
+else
+  CMD+=(-p "$PID")
 fi
 
-perf record -g --call-graph dwarf -F 101 -p "$PID" "$@" -- sleep "$TIME"
-perf script 2>/dev/null | stackcollapse-perf.pl --all > /tmp/collapse.txt
+"${CMD[@]}" "$@" -- sleep "$TIME"
+
+script() {
+  if [ -z "$1" ]; then
+    perf script 2>/dev/null | stackcollapse-perf.pl --all | grep bitcoin
+  else
+    perf script 2>/dev/null | stackcollapse-perf.pl --all
+  fi
+}
+
+script "$PID" > /tmp/collapse.txt

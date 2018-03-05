@@ -57,7 +57,7 @@ def main():
     excludes = parse_list(args.exclude)
 
     proc = subprocess.Popen(
-        ['flamegraph.pl'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        ['flamegraph.pl', '--colors', 'bitcoin'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     hasher = hashlib.new('sha256')
 
