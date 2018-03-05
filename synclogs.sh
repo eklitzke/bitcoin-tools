@@ -4,13 +4,17 @@
 
 set -eu
 
-if [ $# -lt 1 ]; then
-  echo "usage: $0 HOST..."
-fi
+synchosts() {
+  pushd ~/logs &>/dev/null
+  for h in "$@"; do
+    rsync -avz "$h:logs/" . &
+  done
+  popd &>/dev/null
+  wait
+}
 
-pushd ~/logs &>/dev/null
-for h in "$@"; do
-  rsync -az "$h:logs/" . &
-done
-popd &>/dev/null
-wait
+if [ $# -eq 0 ]; then
+  synchosts core leveldb
+else
+  synchosts "$@"
+fi
