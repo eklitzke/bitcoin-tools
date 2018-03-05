@@ -57,7 +57,9 @@ def main():
     excludes = parse_list(args.exclude)
 
     proc = subprocess.Popen(
-        ['flamegraph.pl', '--colors', 'bitcoin'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        ['flamegraph.pl', '--colors', 'bitcoin'],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE)
 
     hasher = hashlib.new('sha256')
 
@@ -97,9 +99,15 @@ def main():
     with open(dest, 'wb') as svgfile:
         svgfile.write(out)
 
+    abs_dest = os.path.abspath(dest)
+
     if not args.no_browser:
-        browser = webbrowser.get(args.browser)
-        browser.open('file://' + os.path.abspath(dest))
+        try:
+            browser = webbrowser.get(args.browser)
+            browser.open('file://' + abs_dest)
+        except webbrowser.Error:
+            pass
+    print(abs_dest)
 
 
 if __name__ == '__main__':
