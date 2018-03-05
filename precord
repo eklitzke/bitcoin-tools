@@ -1,13 +1,30 @@
 #!/bin/bash
 
+usage() {
+  echo "Usage: $0 OPTIONS... PID"
+  echo "       $0 OPTIONS... -p PID"
+  echo "       $0 OPTIONS... -a"
+  echo
+  echo "Options:"
+  echo "  -f FREQUENCY (sample rate, default: 101)"
+  echo "  -m MATCH (pattern to match)"
+  echo "  -p PID"
+  echo "  -t TIME (seconds, default: 60)"
+}
+
 # PID to profile.
 ALL=0
+FREQUENCY=101
 PID=
 MATCH=
 TIME=60
-while getopts ":am:p:t:x" opt; do
+while getopts ":af:m:p:t:x" opt; do
   case $opt in
     a) ALL=1 ;;
+    h) usage
+       exit
+       ;;
+    f) FREQUENCY="$OPTARG" ;;
     m) MATCH="$OPTARG" ;;
     p) PID="$OPTARG" ;;
     t) TIME="$OPTARG" ;;
@@ -24,26 +41,42 @@ while getopts ":am:p:t:x" opt; do
 done
 shift $((OPTIND - 1))
 
-CMD=(perf record
-     -g
-     --call-graph dwarf
-     -F 101
-    )
+# Allow PID to be passed positionally.
+if [ $# -eq 1 ] && [ -z "$PID" ]; then
+  PID="$1"
+  shift 1
+fi
 
+# No other arguments allowed for now...
+if [ $# -gt 0 ]; then
+  echo "Error: too many parameters"
+  usage
+  exit 1
+fi
+
+# Build the options array.
+OPTS=(
+  -g
+  --call-graph dwarf
+  -F "$FREQUENCY"
+)
 if [ "$ALL" -eq 1 ]; then
-  CMD+=(-a)
+  OPTS+=(-a)
 elif [ -n "$PID" ]; then
-  CMD+=(-p "$PID")
+  OPTS+=(-p "$PID")
 else
   echo "Error: You must use -a or -p PID"
   exit 1
 fi
 
-"${CMD[@]}" "$@" -- sleep "$TIME"
+# Record perf data.
+perf record "${OPTS[@]}" -- sleep "$TIME"
 
+# Collapse perf data; this is saved to a file in /tmp since symbol resolution is
+# somewhat expensive.
 perf script 2>/dev/null | stackcollapse-perf.pl --all > /tmp/collapse.txt
 
-# very hacky
+# Very hacky...
 if [ -n "$MATCH" ]; then
-  sed -i "/$MATCH/p" /tmp/collapse.txt
+  sed -i "/${MATCH}/p" /tmp/collapse.txt
 fi
