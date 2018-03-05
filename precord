@@ -1,15 +1,28 @@
 #!/bin/bash
 
+exists() {
+  command -v "$1" &>/dev/null
+}
+
+if ! exists stackcollapse-perf.pl; then
+  echo "Add stackcollapse-perf.pl to PATH"
+  echo "You can get a copy from https://github.com/eklitzke/FlameGraph/tree/bitcoin"
+  exit
+fi
+
 usage() {
   echo "Usage: $0 OPTIONS... PID"
   echo "       $0 OPTIONS... -p PID"
   echo "       $0 OPTIONS... -a"
   echo
   echo "Options:"
+  echo "  -b keep BGThreadWrapper lines"
   echo "  -f FREQUENCY (sample rate, default: 101)"
   echo "  -m MATCH (pattern to match)"
+  echo "  -o OUTPUT (default: /tmp/collapse.txt)"
   echo "  -p PID"
   echo "  -t TIME (seconds, default: 60)"
+  exit "$1"
 }
 
 # PID to profile.
@@ -17,15 +30,17 @@ ALL=0
 FREQUENCY=101
 PID=
 MATCH=
+NOBG=1
+OUTPUT=/tmp/collapse.txt
 TIME=60
-while getopts ":af:m:p:t:x" opt; do
+while getopts ":abf:m:p:t:x" opt; do
   case $opt in
     a) ALL=1 ;;
-    h) usage
-       exit
-       ;;
+    b) NOBG=0 ;;
+    h) usage 0 ;;
     f) FREQUENCY="$OPTARG" ;;
     m) MATCH="$OPTARG" ;;
+    o) OUTPUT=/tmp/collapse.txt ;;
     p) PID="$OPTARG" ;;
     t) TIME="$OPTARG" ;;
     x) set -x ;;
@@ -41,6 +56,10 @@ while getopts ":af:m:p:t:x" opt; do
 done
 shift $((OPTIND - 1))
 
+findpid() {
+  pgrep bitcoind
+}
+
 # Allow PID to be passed positionally.
 if [ $# -eq 1 ] && [ -z "$PID" ]; then
   PID="$1"
@@ -50,8 +69,7 @@ fi
 # No other arguments allowed for now...
 if [ $# -gt 0 ]; then
   echo "Error: too many parameters"
-  usage
-  exit 1
+  usage 1
 fi
 
 # Build the options array.
@@ -65,18 +83,39 @@ if [ "$ALL" -eq 1 ]; then
 elif [ -n "$PID" ]; then
   OPTS+=(-p "$PID")
 else
-  echo "Error: You must use -a or -p PID"
-  exit 1
+  PID=$(pgrep bitcoind)
+  if [ -n "$PID" ]; then
+    echo "Using bitcoind with PID $PID"
+    OPTS+=(-p "$PID")
+  else
+    echo "Error: You must use -a or -p PID"
+    usage 1
+  fi
 fi
 
 # Record perf data.
 perf record "${OPTS[@]}" -- sleep "$TIME"
 
+nobg() {
+  if [ "$NOBG" -eq 1 ]; then
+    grep -v BGThreadWrapper
+  else
+    cat
+  fi
+}
+
+match() {
+  if [ -n "$MATCH" ]; then
+    grep -F "$MATCH"
+  else
+    cat
+  fi
+}
+
 # Collapse perf data; this is saved to a file in /tmp since symbol resolution is
 # somewhat expensive.
-perf script 2>/dev/null | stackcollapse-perf.pl --all > /tmp/collapse.txt
+perf script 2>/dev/null | stackcollapse-perf.pl --all | nobg | match > /tmp/collapse.txt
 
-# Very hacky...
-if [ -n "$MATCH" ]; then
-  sed -i "/${MATCH}/p" /tmp/collapse.txt
+if exists pcat; then
+  exec pcat
 fi
