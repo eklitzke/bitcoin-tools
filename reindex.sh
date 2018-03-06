@@ -84,7 +84,7 @@ fi
 sep systemtap
 pushd "${BITCOINDIR}" &>/dev/null
 PATH="$PWD/src:$PATH"
-stap -I share/systemtap/tapset -c "bitcoind -reindex-chainstate" share/systemtap/cache.stp | tee -a "$OUTFILE" &
+stap -I share/systemtap/tapset -c "bitcoind -reindex-chainstate -debug=leveldb" share/systemtap/cache.stp | tee -a "$OUTFILE" &
 popd &>/dev/null
 wait_for_finish &
 trap 'kill %1' INT
