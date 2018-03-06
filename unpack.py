@@ -94,8 +94,7 @@ def load_events(infile: TextIO) -> EventData:
         if event == 'begin':
             continue
         elif event == 'time':
-            reason, t = info['reason'], info['t']
-            assert isinstance(t, datetime.datetime)
+            reason, t = info['reason'], info['elapsed']
             if reason == 'timer':
                 output.data_times.append(t)
             elif reason == 'flush':
