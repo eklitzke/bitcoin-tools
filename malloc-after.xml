@@ -1,0 +1,268 @@
+<malloc version="1">
+    <heap nr="0">
+        <sizes>
+			<size from="33" to="48" total="1200" count="25"/>
+			<size from="49" to="64" total="128" count="2"/>
+			<size from="33" to="33" total="33" count="1"/>
+			<size from="65" to="65" total="1235" count="19"/>
+			<size from="145" to="145" total="145" count="1"/>
+			<size from="161" to="161" total="161" count="1"/>
+			<size from="225" to="225" total="225" count="1"/>
+			<size from="337" to="337" total="337" count="1"/>
+			<size from="4113" to="4113" total="4113" count="1"/>
+			<size from="252913" to="252913" total="252913" count="1"/>
+			<size from="15548689" to="15548689" total="15548689" count="1"/>
+            <unsorted from="2113" to="2113" total="2113" count="1"/>
+        </sizes>
+        <total type="fast" count="27" size="1328"/>
+        <total type="rest" count="28" size="15809964"/>
+        <system type="current" size="164548608"/>
+        <system type="max" size="164548608"/>
+        <aspace type="total" size="164548608"/>
+        <aspace type="mprotect" size="164548608"/>
+    </heap>
+    <heap nr="1">
+        <sizes>
+			<size from="17" to="32" total="8768" count="274"/>
+			<size from="33" to="48" total="1632" count="34"/>
+			<size from="65" to="80" total="240" count="3"/>
+			<size from="81" to="96" total="960" count="10"/>
+			<size from="113" to="128" total="2560" count="20"/>
+			<size from="193" to="193" total="193" count="1"/>
+			<size from="241" to="241" total="241" count="1"/>
+			<size from="305" to="305" total="21350" count="70"/>
+			<size from="465" to="465" total="9765" count="21"/>
+			<size from="497" to="497" total="6461" count="13"/>
+			<size from="545" to="545" total="7630" count="14"/>
+			<size from="577" to="577" total="6347" count="11"/>
+			<size from="609" to="609" total="10962" count="18"/>
+			<size from="641" to="641" total="6410" count="10"/>
+			<size from="689" to="689" total="3445" count="5"/>
+			<size from="721" to="721" total="3605" count="5"/>
+			<size from="753" to="753" total="5271" count="7"/>
+			<size from="785" to="785" total="7065" count="9"/>
+			<size from="833" to="833" total="6664" count="8"/>
+			<size from="865" to="865" total="1730" count="2"/>
+			<size from="897" to="897" total="4485" count="5"/>
+			<size from="929" to="929" total="4645" count="5"/>
+			<size from="977" to="977" total="4885" count="5"/>
+			<size from="1009" to="1009" total="3027" count="3"/>
+			<size from="1041" to="1073" total="7383" count="7"/>
+			<size from="1153" to="1185" total="4708" count="4"/>
+			<size from="1217" to="1265" total="2482" count="2"/>
+			<size from="1297" to="1329" total="7878" count="6"/>
+			<size from="1361" to="1361" total="1361" count="1"/>
+			<size from="1409" to="1441" total="4259" count="3"/>
+			<size from="1473" to="1473" total="2946" count="2"/>
+			<size from="1553" to="1585" total="18988" count="12"/>
+			<size from="1745" to="1745" total="1745" count="1"/>
+			<size from="1937" to="1937" total="1937" count="1"/>
+			<size from="2417" to="2417" total="2417" count="1"/>
+			<size from="2785" to="2785" total="2785" count="1"/>
+			<size from="6737" to="6737" total="6737" count="1"/>
+            <unsorted from="305" to="305" total="305" count="1"/>
+        </sizes>
+        <total type="fast" count="341" size="14160"/>
+        <total type="rest" count="256" size="180112"/>
+        <system type="current" size="311296"/>
+        <system type="max" size="311296"/>
+        <aspace type="total" size="311296"/>
+        <aspace type="mprotect" size="311296"/>
+    </heap>
+    <heap nr="2">
+        <sizes>
+			<size from="641" to="641" total="641" count="1"/>
+			<size from="1169" to="1169" total="1169" count="1"/>
+			<size from="1377" to="1377" total="1377" count="1"/>
+			<size from="1409" to="1409" total="1409" count="1"/>
+			<size from="1633" to="1633" total="1633" count="1"/>
+            <unsorted from="7761" to="17633" total="25394" count="2"/>
+        </sizes>
+        <total type="fast" count="0" size="0"/>
+        <total type="rest" count="7" size="31623"/>
+        <system type="current" size="4530176"/>
+        <system type="max" size="4530176"/>
+        <aspace type="total" size="4530176"/>
+        <aspace type="mprotect" size="4530176"/>
+    </heap>
+    <heap nr="3">
+        <sizes>
+        </sizes>
+        <total type="fast" count="0" size="0"/>
+        <total type="rest" count="0" size="0"/>
+        <system type="current" size="135168"/>
+        <system type="max" size="135168"/>
+        <aspace type="total" size="135168"/>
+        <aspace type="mprotect" size="135168"/>
+    </heap>
+    <heap nr="4">
+        <sizes>
+			<size from="17" to="32" total="128" count="4"/>
+			<size from="33" to="48" total="96" count="2"/>
+			<size from="49" to="64" total="256" count="4"/>
+			<size from="65" to="80" total="2320" count="29"/>
+			<size from="81" to="96" total="96" count="1"/>
+			<size from="49" to="49" total="98" count="2"/>
+			<size from="977" to="977" total="977" count="1"/>
+			<size from="1681" to="1681" total="1681" count="1"/>
+			<size from="20225" to="20225" total="20225" count="1"/>
+			<size from="26977" to="26977" total="26977" count="1"/>
+			<size from="481697" to="481697" total="481697" count="1"/>
+            <unsorted from="305" to="305" total="305" count="1"/>
+        </sizes>
+        <total type="fast" count="40" size="2896"/>
+        <total type="rest" count="8" size="531960"/>
+        <system type="current" size="5660672"/>
+        <system type="max" size="5660672"/>
+        <aspace type="total" size="5660672"/>
+        <aspace type="mprotect" size="5660672"/>
+    </heap>
+    <heap nr="5">
+        <sizes>
+			<size from="17" to="32" total="640" count="20"/>
+			<size from="33" to="48" total="960" count="20"/>
+			<size from="49" to="64" total="1280" count="20"/>
+			<size from="65" to="80" total="1680" count="21"/>
+			<size from="65" to="65" total="65" count="1"/>
+			<size from="785" to="785" total="785" count="1"/>
+			<size from="801" to="801" total="801" count="1"/>
+			<size from="1201" to="1201" total="1201" count="1"/>
+			<size from="1825" to="1825" total="1825" count="1"/>
+			<size from="2065" to="2065" total="2065" count="1"/>
+			<size from="6833" to="7073" total="13906" count="2"/>
+			<size from="13361" to="13361" total="13361" count="1"/>
+			<size from="32641" to="32641" total="32641" count="1"/>
+			<size from="141441" to="141441" total="141441" count="1"/>
+            <unsorted from="1441" to="1441" total="1441" count="1"/>
+        </sizes>
+        <total type="fast" count="81" size="4560"/>
+        <total type="rest" count="12" size="209532"/>
+        <system type="current" size="307200"/>
+        <system type="max" size="307200"/>
+        <aspace type="total" size="307200"/>
+        <aspace type="mprotect" size="307200"/>
+    </heap>
+    <heap nr="6">
+        <sizes>
+			<size from="33" to="48" total="48" count="1"/>
+			<size from="3073" to="3073" total="3073" count="1"/>
+            <unsorted from="161" to="513" total="835" count="3"/>
+        </sizes>
+        <total type="fast" count="1" size="48"/>
+        <total type="rest" count="4" size="3908"/>
+        <system type="current" size="135168"/>
+        <system type="max" size="135168"/>
+        <aspace type="total" size="135168"/>
+        <aspace type="mprotect" size="135168"/>
+    </heap>
+    <heap nr="7">
+        <sizes>
+			<size from="33" to="33" total="7590" count="230"/>
+			<size from="49" to="49" total="4410" count="90"/>
+			<size from="65" to="65" total="29900" count="460"/>
+			<size from="81" to="81" total="11340" count="140"/>
+			<size from="97" to="97" total="7663" count="79"/>
+			<size from="113" to="113" total="63619" count="563"/>
+			<size from="129" to="129" total="218268" count="1692"/>
+			<size from="145" to="145" total="10730" count="74"/>
+			<size from="177" to="177" total="1593" count="9"/>
+			<size from="193" to="193" total="42074" count="218"/>
+			<size from="209" to="209" total="21109" count="101"/>
+			<size from="225" to="225" total="20250" count="90"/>
+			<size from="241" to="241" total="119777" count="497"/>
+			<size from="257" to="257" total="61166" count="238"/>
+			<size from="273" to="273" total="1092" count="4"/>
+			<size from="289" to="289" total="11271" count="39"/>
+			<size from="305" to="305" total="8235" count="27"/>
+			<size from="321" to="321" total="8346" count="26"/>
+			<size from="337" to="337" total="8088" count="24"/>
+			<size from="353" to="353" total="353" count="1"/>
+			<size from="369" to="369" total="14391" count="39"/>
+			<size from="385" to="385" total="9625" count="25"/>
+			<size from="417" to="417" total="8757" count="21"/>
+			<size from="433" to="433" total="1299" count="3"/>
+			<size from="449" to="449" total="898" count="2"/>
+			<size from="465" to="465" total="1395" count="3"/>
+			<size from="481" to="481" total="481" count="1"/>
+			<size from="497" to="497" total="6958" count="14"/>
+			<size from="513" to="513" total="2565" count="5"/>
+			<size from="545" to="545" total="2725" count="5"/>
+			<size from="609" to="609" total="2436" count="4"/>
+			<size from="625" to="625" total="1250" count="2"/>
+			<size from="641" to="641" total="641" count="1"/>
+			<size from="689" to="689" total="4134" count="6"/>
+			<size from="705" to="705" total="705" count="1"/>
+			<size from="721" to="721" total="721" count="1"/>
+			<size from="769" to="769" total="769" count="1"/>
+			<size from="785" to="785" total="785" count="1"/>
+			<size from="801" to="801" total="801" count="1"/>
+			<size from="817" to="817" total="1634" count="2"/>
+			<size from="849" to="849" total="849" count="1"/>
+			<size from="913" to="913" total="913" count="1"/>
+			<size from="945" to="945" total="945" count="1"/>
+			<size from="961" to="961" total="961" count="1"/>
+			<size from="977" to="977" total="977" count="1"/>
+			<size from="1009" to="1009" total="1009" count="1"/>
+			<size from="1073" to="1073" total="1073" count="1"/>
+			<size from="1089" to="1121" total="4420" count="4"/>
+			<size from="1153" to="1153" total="1153" count="1"/>
+			<size from="1409" to="1409" total="1409" count="1"/>
+			<size from="1553" to="1553" total="1553" count="1"/>
+			<size from="2065" to="2065" total="2065" count="1"/>
+			<size from="2337" to="2337" total="2337" count="1"/>
+			<size from="2657" to="2657" total="2657" count="1"/>
+			<size from="7025" to="7153" total="191531" count="27"/>
+			<size from="7169" to="7665" total="567628" count="76"/>
+			<size from="7681" to="8177" total="475836" count="60"/>
+			<size from="8193" to="8689" total="677008" count="80"/>
+			<size from="8705" to="9201" total="719952" count="80"/>
+			<size from="9233" to="9713" total="635267" count="67"/>
+			<size from="9729" to="10225" total="771133" count="77"/>
+			<size from="10241" to="10737" total="694114" count="66"/>
+			<size from="10769" to="12273" total="2661799" count="231"/>
+			<size from="12289" to="16369" total="7033021" count="493"/>
+			<size from="16385" to="20465" total="7916799" count="431"/>
+			<size from="20481" to="24561" total="8806199" count="391"/>
+			<size from="24577" to="28657" total="9146393" count="345"/>
+			<size from="28689" to="32753" total="9467542" count="310"/>
+			<size from="32785" to="36849" total="9643845" count="277"/>
+			<size from="36881" to="40945" total="9843005" count="253"/>
+			<size from="40961" to="65489" total="62862222" count="1198"/>
+			<size from="65537" to="98289" total="90886840" count="1128"/>
+			<size from="98305" to="131057" total="93521844" count="820"/>
+			<size from="131233" to="163793" total="87310722" count="594"/>
+			<size from="163905" to="262033" total="223541021" count="1069"/>
+			<size from="262225" to="522465" total="468075656" count="1272"/>
+			<size from="524449" to="4393377" total="860327796" count="916"/>
+            <unsorted from="2897" to="2897" total="2897" count="1"/>
+        </sizes>
+        <total type="fast" count="0" size="0"/>
+        <total type="rest" count="15019" size="1956522235"/>
+        <system type="current" size="2017083392"/>
+        <system type="max" size="2105708544"/>
+        <aspace type="total" size="4362240"/>
+        <aspace type="mprotect" size="67108864"/>
+    </heap>
+    <heap nr="8">
+        <sizes>
+			<size from="17" to="32" total="32" count="1"/>
+			<size from="33" to="48" total="3150624" count="65638"/>
+			<size from="33" to="33" total="66" count="2"/>
+            <unsorted from="4113" to="4113" total="4113" count="1"/>
+        </sizes>
+        <total type="fast" count="65639" size="3150656"/>
+        <total type="rest" count="3" size="4179"/>
+        <system type="current" size="3162112"/>
+        <system type="max" size="3162112"/>
+        <aspace type="total" size="3162112"/>
+        <aspace type="mprotect" size="3162112"/>
+    </heap>
+    <total type="fast" count="66129" size="3173648"/>
+    <total type="rest" count="15337" size="1973293513"/>
+    <total type="mmap" count="3" size="34615296"/>
+    <system type="current" size="2195873792"/>
+    <system type="max" size="2284498944"/>
+    <aspace type="total" size="183152640"/>
+    <aspace type="mprotect" size="245899264"/>
+</malloc>
+
