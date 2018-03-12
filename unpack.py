@@ -35,7 +35,6 @@ def split_fields(fields: List[str]) -> Dict[str, Field]:
         if k == 't':
             val = datetime.datetime.fromtimestamp(float(v))
         elif k == 'elapsed':
-            #val = datetime.timedelta(seconds=float(v))
             val = float(v)
         elif k == 'reason':
             val = v
@@ -44,7 +43,13 @@ def split_fields(fields: List[str]) -> Dict[str, Field]:
         elif k.endswith(':time'):
             val = pd.Timedelta(int(v) * 1000, unit='ns')
         else:
-            val = int(v, 10)
+            try:
+                val = int(v, 10)
+            except ValueError:
+                try:
+                    val = float(v)
+                except ValueError:
+                    pass
         info[k] = val
     return info
 
@@ -57,6 +62,45 @@ class EventData:
         self.data_times = []  # type: List[datetime.datetime]
         self.events = {}  # type: Dict[str, List[Dict[str, Field]]]
         self.event_fields = {}  # type: Dict[str, List[str]]
+        self.version = None
+
+
+def parse_v1(fields: List[str], output: EventData, events, event_fields):
+    event = fields.pop(0)
+    info = split_fields(fields)
+
+    if event == 'begin':
+        return
+    elif event == 'time':
+        reason, t = info['reason'], info['elapsed']
+        if reason == 'timer':
+            output.data_times.append(t)
+        elif reason == 'flush':
+            output.flush_times.append(t)
+        else:
+            assert False
+    elif event == 'finish':
+        return
+    else:
+        # handle regular data
+        events[event].append(info)
+        for k in info:
+            # track all the known fields
+            event_fields[event].add(k)
+
+
+def parse_v2(fields: List[str], output: EventData, events, event_fields):
+    t = float(fields.pop(0))
+    event = fields.pop(0)
+    if event in ['begin', 'finish']:
+        return
+
+    info = split_fields(fields)
+    info['t'] = t
+    events[event].append(info)
+    for k in info:
+        # track all the known fields
+        event_fields[event].add(k)
 
 
 def load_events(infile: TextIO) -> EventData:
@@ -71,46 +115,41 @@ def load_events(infile: TextIO) -> EventData:
         if not line:
             # ignore blank lines
             continue
-        m = SECTION_RE.match(line)
-        if m:
-            section, = m.groups()
-            continue
+        if section != 'systemtap':
+            m = SECTION_RE.match(line)
+            if m:
+                section, = m.groups()
+                continue
 
-        if section == 'system':
-            k, v = line.split(' ', 1)
-            val = v  # type:Field
-            if k.endswith(':bytes') or k.endswith(':count'):
-                val = int(v)
-            output.hostinfo[k] = val
-            continue
-        elif section == 'config':
+            if section == 'system':
+                k, v = line.split(' ', 1)
+                val = v  # type:Field
+                if k.endswith(':bytes') or k.endswith(':count'):
+                    val = int(v)
+                output.hostinfo[k] = val
+                continue
+
+            assert section == 'config'
             output.config += line + '\n'
             continue
 
         assert section == 'systemtap'
         fields = line.split()
-        event = fields.pop(0)
-        info = split_fields(fields)
 
-        if event == 'begin':
-            continue
-        elif event == 'time':
-            reason, t = info['reason'], info['elapsed']
-            #reason, t = info['reason'], info['t']
-            if reason == 'timer':
-                output.data_times.append(t)
-            elif reason == 'flush':
-                output.flush_times.append(t)
-            else:
-                assert False
-        elif event == 'finish':
-            break
+        # detect format
+        if output.version is None:
+            print(fields)
+            try:
+                print(float(fields[0]))
+                output.version = 2
+            except ValueError:
+                output.version = 1
+            print(output.version)
+
+        if output.version == 1:
+            parse_v1(fields, output, events, event_fields)
         else:
-            # handle regular data
-            events[event].append(info)
-            for k in info:
-                # track all the known fields
-                event_fields[event].add(k)
+            parse_v2(fields, output, events, event_fields)
 
     output.event_fields = {k: list(sorted(v)) for k, v in event_fields.items()}
     output.events = dict(events)
@@ -124,12 +163,22 @@ def create_flushes_frame(times: List[datetime.datetime],
     return frame[columns]
 
 
-def create_frame(times: List[datetime.datetime], data: List[Dict[str, Field]],
-                 columns: List[str]) -> pd.DataFrame:
+def create_v1_frame(times: List[datetime.datetime],
+                    data: List[Dict[str, Field]],
+                    columns: List[str]) -> pd.DataFrame:
     assert len(times) == len(data)
     for row in data:
         for col in columns:
             row.setdefault(col, None)
+    return pd.DataFrame(data, index=times)
+
+
+def create_v2_frame(data: List[Dict[str, Field]],
+                    columns: List[str]) -> pd.DataFrame:
+    for row in data:
+        for col in columns:
+            row.setdefault(col, None)
+    times = [d.pop('t') for d in data]
     return pd.DataFrame(data, index=times)
 
 
@@ -174,16 +223,21 @@ def unpack_data_strict(input_file: str) -> Dict[str, Any]:
     with open(input_file) as infile:
         data = load_events(infile)
 
-    frames = {'flushes': None}
-    try:
-        frames['flushes'] = create_flushes_frame(data.flush_times,
-                                                 data.events.pop('flush'))
-    except KeyError:
-        print('WARNING: no flush events')
+    frames = {}  # type: Dict[str, Any]
+    if data.version == 1:
+        frames['flushes'] = []
+        try:
+            frames['flushes'] = create_flushes_frame(data.flush_times,
+                                                     data.events.pop('flush'))
+        except KeyError:
+            pass
 
-    for event, vec in data.events.items():
-        frames[event] = create_frame(data.data_times, vec,
-                                     data.event_fields[event])
+        for event, vec in data.events.items():
+            frames[event] = create_v1_frame(data.data_times, vec,
+                                            data.event_fields[event])
+    else:
+        for event, vec in data.events.items():
+            frames[event] = create_v2_frame(vec, data.event_fields[event])
 
     return {
         'filename': input_file,

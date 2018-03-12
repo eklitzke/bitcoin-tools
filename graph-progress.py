@@ -32,9 +32,17 @@ def fmt_commit(hostinfo: Dict[str, str]) -> str:
 
 
 def pd_to_np(data) -> np.ndarray:
-    vec = np.array([data.index, data * 100])
+    vec = np.array([data.index, data])
     vec[np.isnan(vec)] = 0.
     return vec
+
+
+def get_progress(df):
+    updatetip = df['frames']['updatetip']
+    try:
+        return pd_to_np(updatetip['progress'] * 100)
+    except KeyError:
+        return pd_to_np(updatetip['pct'])
 
 
 def make_figure(data1,
@@ -42,8 +50,8 @@ def make_figure(data1,
                 outname: str,
                 labels: List[str],
                 hours_per_tick: int = 2):
-    a = pd_to_np(data1['frames']['updatetip']['progress'])
-    b = pd_to_np(data2['frames']['updatetip']['progress'])
+    a = get_progress(data1)
+    b = get_progress(data2)
 
     # Trim the time axis.
     maxta = a[0].max()
