@@ -1,3 +1,4 @@
+import datetime
 import matplotlib.pyplot as plt
 import pandas as pd
 from typing import Optional  # noqa
@@ -11,13 +12,16 @@ def set_flushes(val: pd.DataFrame):
 
 
 def overlay_flushes(flushes):
-    for t in flushes:
-        plt.axvline(x=t, color='k', linestyle=':')
+    for flush in flushes:
+        val = flush
+        if isinstance(val, datetime.timedelta):
+            val = val.total_seconds()
+        plt.axvline(x=val, color='k', linestyle=':')
 
 
 def plot(df, title=None, secondary_y=[], ylabel='', ylabel2=''):
     """Generate a plot from a datafame, with flushes overlaid."""
-    plt.figure()
+    #plt.figure()
     ax = df.plot(title=title, secondary_y=secondary_y)
     if ylabel:
         ax.set_ylabel(ylabel)

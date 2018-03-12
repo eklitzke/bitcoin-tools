@@ -35,7 +35,8 @@ def split_fields(fields: List[str]) -> Dict[str, Field]:
         if k == 't':
             val = datetime.datetime.fromtimestamp(float(v))
         elif k == 'elapsed':
-            val = datetime.timedelta(seconds=float(v))
+            #val = datetime.timedelta(seconds=float(v))
+            val = float(v)
         elif k == 'reason':
             val = v
         elif k == 'progress':
@@ -95,6 +96,7 @@ def load_events(infile: TextIO) -> EventData:
             continue
         elif event == 'time':
             reason, t = info['reason'], info['elapsed']
+            #reason, t = info['reason'], info['t']
             if reason == 'timer':
                 output.data_times.append(t)
             elif reason == 'flush':

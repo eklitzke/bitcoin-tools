@@ -6,24 +6,24 @@ import datetime
 import webbrowser
 
 import matplotlib
+matplotlib.use('cairo')
+
 import matplotlib.ticker as mtick
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-from matplotlib import cm
 
-from typing import Any, Dict, Tuple
+from typing import Dict, List
 
 import unpack
 
 
-def configure_matplotlib(dpi=300, figsize=(12, 8)):
+def configure_matplotlib(dpi=200, figsize=(8, 6)):
     matplotlib.rcParams['figure.dpi'] = dpi
     matplotlib.rcParams['figure.figsize'] = figsize
 
 
 def sec_formatter(t, _):
-    dt = datetime.timedelta(seconds=t)
+    dt = datetime.timedelta(seconds=int(t))
     return str(dt)
 
 
@@ -31,32 +31,56 @@ def fmt_commit(hostinfo: Dict[str, str]) -> str:
     return '{}:{}'.format(hostinfo['git:branch'], hostinfo['git:commit'][:8])
 
 
-def make_figure(data1, data2, outname: str):
-    cmap = cm.get_cmap('coolwarm')
-    prog1 = data1['frames']['updatetip']['progress'] * 100
-    prog2 = data2['frames']['updatetip']['progress'] * 100
-    prog1.plot()
-    prog2.plot()
-    plt.legend(
-        labels=[fmt_commit(data1['hostinfo']),
-                fmt_commit(data2['hostinfo'])])
+def pd_to_np(data) -> np.ndarray:
+    vec = np.array([data.index, data * 100])
+    vec[np.isnan(vec)] = 0.
+    return vec
+
+
+def make_figure(data1,
+                data2,
+                outname: str,
+                labels: List[str],
+                hours_per_tick: int = 2):
+    a = pd_to_np(data1['frames']['updatetip']['progress'])
+    b = pd_to_np(data2['frames']['updatetip']['progress'])
+
+    # Trim the time axis.
+    maxta = a[0].max()
+    maxtb = b[0].max()
+    maxt = min(maxta, maxtb)
+    if maxta > maxt:
+        ix = np.argmax(a[0] > maxt)
+        a = a[:, :ix]
+    if maxtb > maxt:
+        ix = np.argmax(b[0] > maxt)
+        b = b[:, :ix]
 
     ax = plt.axes()
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Progress')
-    ax.set_title('Bitcoin IBD Progress')
+    ax.set_xlabel('Time', fontsize=12)
+    ax.set_ylabel('Progress', fontsize=12)
+    ax.set_title('Bitcoin Initial Block Download (IBD)', fontsize=14)
+
+    plt.plot(a[0], a[1], 'r', b[0], b[1], 'b')
+
+    # round up to the next hour
+    hours = (maxt // 3600) + 1
+    maxt = hours * 3600
+    ax.set_xlim(-1800, maxt)
+
+    maxtick = 0
+    ticks = [maxtick]
+    while True:
+        maxtick += 3600 * hours_per_tick
+        if maxtick <= maxt:
+            ticks.append(maxtick)
+        else:
+            break
+    ax.set_xticks(ticks)
     ax.yaxis.set_major_formatter(mtick.PercentFormatter())
     ax.xaxis.set_major_formatter(mtick.FuncFormatter(sec_formatter))
 
-    if False:
-        flushes1 = data1['frames']['flushes']
-        flushes2 = data1['frames']['flushes']
-        for x in flushes1:
-            plt.axvline(x=x, color=cmap(0.0), linestyle=':')
-
-        for x in flushes2:
-            plt.axvline(x=x, color=cmap(1.0), linestyle=':')
-
+    plt.legend(labels=labels)
     plt.savefig(outname)
 
 
@@ -71,6 +95,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-o', '--output', default='out.png', help='Output filename')
+    parser.add_argument('-t', '--hours-per-tick', default=1, type=int)
+    parser.add_argument('--labels', default='', help='Label 1')
     parser.add_argument('log1')
     parser.add_argument('log2')
     args = parser.parse_args()
@@ -78,8 +104,14 @@ def main():
     df1 = load_file(args.log1)
     df2 = load_file(args.log2)
 
+    if args.labels:
+        labels = [l.strip() for l in args.labels.split(',')]
+        assert len(labels) == 2
+    else:
+        labels = [fmt_commit(df1['hostinfo']), fmt_commit(df2['hostinfo'])]
+
     configure_matplotlib()
-    make_figure(df1, df2, args.output)
+    make_figure(df1, df2, args.output, labels, args.hours_per_tick)
 
     abs_dest = os.path.abspath(args.output)
     try:
