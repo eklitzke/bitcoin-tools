@@ -1,0 +1,9 @@
+#--disable-wallet
+--disable-bench
+#--disable-tests
+--with-gui=no
+#--enable-debug
+#--enable-sanitizer=address
+#--disable-hardening
+#--disable-asm
+#--disable-silent-rules
